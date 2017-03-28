@@ -212,6 +212,9 @@
 (define-formula-op in node/expr? #:same-arity? #t #:max-length 2)
 (define-formula-op = node/expr? #:same-arity? #t #:max-length 2 #:lift @=)
 
+(define-formula-op is-string? node/expr? #:same-arity? #t #:min-length 1 #:max-length 1 #:lift @string?)
+(define-formula-op is-string-prefix? node/expr? #:same-arity? #t #:min-length 2 #:max-length 2 #:lift @string-prefix?)
+
 (define-formula-op && node/formula? #:min-length 1 #:lift @&&)
 (define-formula-op || node/formula? #:min-length 1 #:lift @||)
 (define-formula-op => node/formula? #:min-length 2 #:max-length 2 #:lift @=>)

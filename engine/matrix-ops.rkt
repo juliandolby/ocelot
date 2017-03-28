@@ -111,3 +111,24 @@
 (define (matrix/some? universe A)
   (for/all ([A (matrix-entries A)])
     (apply || A)))
+
+(define (matrix/string? universe A)
+  (for/all ([A (matrix-entries A)])
+    (let ((arity (matrix-arity universe A)))
+      (apply &&
+	     (for/list ([(v i) (in-indexed A)])
+		       (print v)
+		       (print (idx->tuple universe arity i))
+		 (=> v (string? (car (idx->tuple universe arity i)))))))))
+
+(define (matrix/string-prefix? universe A B)
+  (for*/all ([A (matrix-entries A)][B (matrix-entries B)])
+    (let ((arityA (matrix-arity universe A))
+	  (arityB (matrix-arity universe B)))
+      (apply &&
+        (for*/list ([(v i) (in-indexed A)]
+		    [(w j) (in-indexed B)])
+	  (let ((s1 (car (idx->tuple universe arityA i)))
+		(s2 (car (idx->tuple universe arityB j))))	    
+	    (=> (and v w)
+		(and (string? s1) (string? s2) (not (string=? s1 s2)) (string-prefix? s2 s1)))))))))
