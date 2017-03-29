@@ -4,7 +4,7 @@
 
 (require ocelot)
 
-(define U (universe (append '((p1 p1) (p2 p2) (Rob "Rob") (Robert "Robert") (Jon "Jon") (Jonathon "Jonathon")) (list (list 'S S)))))
+(define U (universe (append '(p1 p2 (Rob "Rob") (Robert "Robert") (Jon "Jon") (Jonathon "Jonathon")) (list (list 'S S)))))
 
 (define String (declare-relation 1 "String"))
 
