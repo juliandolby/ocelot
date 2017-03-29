@@ -64,15 +64,17 @@
                                   (is-string-prefix? s n))))))) ib))))))
 
 (define symbolic-example-1
-  (interpretation->relations
-   (evaluate ib
-     (solve
-      (assert
-       (interpret*
-        (some ([s1 junk2])
-              (some ([s2 junk2])
-                    (some ([s3 junk2])
-                          (and
-                           (is-string-prefix? s1 s2)
-                           (is-string-prefix? s2 s3)))))
-        ib))))))
+  (let ((s
+        (solve
+         (assert
+          (interpret*
+           (some ([s1 junk2])
+                 (some ([s2 junk2])
+                       (some ([s3 junk2])
+                             (and
+                              (is-string-prefix? s1 s2)
+                              (is-string-prefix? s2 s3)))))
+           ib)))))
+    (println s)
+    (interpretation->relations (evaluate ib s))))
+
