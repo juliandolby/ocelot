@@ -134,12 +134,6 @@
 		    [(w j) (in-indexed B)])
 	  (let ((s1 (get-value universe arityA i))
 		(s2 (get-value universe arityB j)))
-	    (print (stringish? s1))
-	    (print (stringish? s2))
-	    (println s1)
-	    (println s2)
-	    (when (and (stringish? s1) (stringish? s2))
-	      (println (stringish-prefix? s2 s1)))
 	    (=> (and v w)
 		(and (stringish? s1) (stringish? s2) (not (stringish=? s1 s2)) (stringish-prefix? s2 s1)))))))))
 
