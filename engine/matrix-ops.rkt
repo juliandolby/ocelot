@@ -1,6 +1,6 @@
 #lang racket
 
-(require "../lang/universe.rkt" "matrix.rkt" (prefix-in $ racket)
+(require "../lang/universe.rkt" "helpers.rkt" "matrix.rkt" (prefix-in $ racket)
          (only-in rosette and or not for/all for*/all)
          (only-in rosette/base/core/bool && || => <=> !))
 
@@ -112,14 +112,18 @@
   (for/all ([A (matrix-entries A)])
     (apply || A)))
 
+(define (get-value universe arity i)
+  ((universe-values universe)
+   (car (idx->tuple universe arity i))))
+
 (define (matrix/string? universe A)
   (for/all ([A (matrix-entries A)])
     (let ((arity (matrix-arity universe A)))
       (apply &&
 	     (for/list ([(v i) (in-indexed A)])
 		       (print v)
-		       (print (idx->tuple universe arity i))
-		 (=> v (string? (car (idx->tuple universe arity i)))))))))
+		       (print (get-value universe arity i))
+		 (=> v (string? (get-value universe arity i))))))))
 
 (define (matrix/string-prefix? universe A B)
   (for*/all ([A (matrix-entries A)][B (matrix-entries B)])
@@ -128,7 +132,22 @@
       (apply &&
         (for*/list ([(v i) (in-indexed A)]
 		    [(w j) (in-indexed B)])
-	  (let ((s1 (car (idx->tuple universe arityA i)))
-		(s2 (car (idx->tuple universe arityB j))))	    
+	  (let ((s1 (get-value universe arityA i))
+		(s2 (get-value universe arityB j)))
+	    (print (stringish? s1))
+	    (print (stringish? s2))
+	    (println s1)
+	    (println s2)
+	    (when (and (stringish? s1) (stringish? s2))
+	      (println (stringish-prefix? s2 s1)))
 	    (=> (and v w)
-		(and (string? s1) (string? s2) (not (string=? s1 s2)) (string-prefix? s2 s1)))))))))
+		(and (stringish? s1) (stringish? s2) (not (stringish=? s1 s2)) (stringish-prefix? s2 s1)))))))))
+
+; does A contain a given tuple?
+(define (matrix/contains? universe tuple A)
+  (for/all ([A (matrix-entries A)])
+    (let ([arity (matrix-arity universe A)])
+      (unless (= arity (length tuple))
+        (raise-argument-error 'matrix/contains? "tuple of correct length" tuple))
+      (let ([idx (tuple->idx universe tuple)])
+        (list-ref A idx)))))
