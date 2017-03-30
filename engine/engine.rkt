@@ -115,10 +115,10 @@
      (or (not (rec (first args))) (rec (second args)))]
     [_ (let ([args ($map rec args)])
          (match op
-           [(? node/formula/op/is-string-prefix?)
+           [(? node/formula/op/is-string-prefix??)
             (let ([A (first args)] [B (second args)])
               (matrix/string-prefix? universe A B))]
-	   [(? node/formula/op/is-string?)
+	   [(? node/formula/op/is-string??)
             (let ([A (first args)])
               (matrix/string? universe A))]
            [(? node/formula/op/in?)
