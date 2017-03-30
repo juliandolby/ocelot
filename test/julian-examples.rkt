@@ -76,12 +76,15 @@
         (solve
          (assert
           (interpret*
-           (some ([s1 junk1])
-                 (some ([s2 junk2])
-                       (some ([s3 junk3])
-                             (and
-                              (is-string-prefix? s1 s2)
-                              (is-string-prefix? s2 s3)))))
+           (and (one junk1)
+                (one junk2)
+                (one junk3)
+                (all ([s1 junk1])
+                     (all ([s2 junk2])
+                          (all ([s3 junk3])
+                               (and
+                                (is-string-prefix? s1 s2)
+                                (is-string-prefix? s2 s3))))))
            ib)))))
     (println s)
     (interpretation->relations (evaluate ib s))))
