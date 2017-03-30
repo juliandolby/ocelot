@@ -34,11 +34,19 @@
 
 (define junk-bound (make-upper-bound junk '((p1) (Robert) (Rob))))
 
+(define junk1 (declare-relation 1 "Junk1"))
+
+(define junk1-bound (make-upper-bound junk1 '((Jon) (Jonathon) (Rob) (S))))
+
 (define junk2 (declare-relation 1 "Junk2"))
 
 (define junk2-bound (make-upper-bound junk2 '((Jon) (Jonathon) (Rob) (S))))
 
-(define limits (bounds U (list string-bound junk2-bound junk-bound person-bound name-bound has-name-bound has-nickname-bound is-nickname-bound)))
+(define junk3 (declare-relation 1 "Junk3"))
+
+(define junk3-bound (make-upper-bound junk3 '((Jon) (Jonathon) (Rob) (S))))
+
+(define limits (bounds U (list string-bound junk1-bound junk2-bound junk3-bound junk-bound person-bound name-bound has-name-bound has-nickname-bound is-nickname-bound)))
 
 (define ib (instantiate-bounds limits))
 
@@ -68,9 +76,9 @@
         (solve
          (assert
           (interpret*
-           (some ([s1 junk2])
+           (some ([s1 junk1])
                  (some ([s2 junk2])
-                       (some ([s3 junk2])
+                       (some ([s3 junk3])
                              (and
                               (is-string-prefix? s1 s2)
                               (is-string-prefix? s2 s3)))))
