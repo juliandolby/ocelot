@@ -1,14 +1,15 @@
 #lang rosette
 
-(define-symbolic S string?)
+(define-symbolic S1 string?)
+(define-symbolic S2 string?)
 
 (require ocelot)
 
-(define U (universe (append '(p1 p2 (Rob "Rob") (Robert "Robert") (Jon "Jon") (Jonathon "Jonathon")) (list (list 'S S)))))
+(define U (universe (append '(p1 p2 (Rob "Rob") (Robert "Robert") (Jon "Jon") (Jonathon "Jonathon")) (list (list 'S1 S1) (list 'S2 S2)))))
 
 (define String (declare-relation 1 "String"))
 
-(define string-bound (make-exact-bound String '((Rob) (Robert) (Jon) (Jonathon) (S))))
+(define string-bound (make-exact-bound String '((Rob) (Robert) (Jon) (Jonathon) (S1) (S2))))
 
 (define Person (declare-relation 1 "Person"))
 
@@ -32,19 +33,19 @@
 
 (define junk (declare-relation 1 "Junk"))
 
-(define junk-bound (make-upper-bound junk '((p1) (Robert) (Rob))))
+(define junk-bound (make-exact-bound junk '((Jon) (Rob))))
 
 (define junk1 (declare-relation 1 "Junk1"))
 
-(define junk1-bound (make-upper-bound junk1 '((Jon) (Jonathon) (Rob) (S))))
+(define junk1-bound (make-upper-bound junk1 '((Jon) (Jonathon) (Rob) (Robert) (S1) (S2))))
 
 (define junk2 (declare-relation 1 "Junk2"))
 
-(define junk2-bound (make-upper-bound junk2 '((Jon) (Jonathon) (Rob) (S))))
+(define junk2-bound (make-upper-bound junk2 '((Jon) (Jonathon) (Rob) (Robert) (S1) (S2))))
 
 (define junk3 (declare-relation 1 "Junk3"))
 
-(define junk3-bound (make-upper-bound junk3 '((Jon) (Jonathon) (Rob) (S))))
+(define junk3-bound (make-upper-bound junk3 '((Jon) (Jonathon) (Rob) (Robert) (S1) (S2))))
 
 (define limits (bounds U (list string-bound junk1-bound junk2-bound junk3-bound junk-bound person-bound name-bound has-name-bound has-nickname-bound is-nickname-bound)))
 
@@ -76,12 +77,11 @@
         (solve
          (assert
           (interpret*
-           (and (one junk1)
-                (one junk2)
-                (one junk3)
+           (and (some ([j junk1])
+                      (some (- junk1 j)))
                 (all ([s1 junk1])
-                     (all ([s2 junk2])
-                          (all ([s3 junk3])
+                     (some ([s2 junk2])
+                          (some ([s3 junk3])
                                (and
                                 (is-string-prefix? s1 s2)
                                 (is-string-prefix? s2 s3))))))
@@ -89,3 +89,17 @@
     (println s)
     (interpretation->relations (evaluate ib s))))
 
+(define symbolic-example-2
+  (let ((s
+        (solve
+         (assert
+          (interpret*
+           (and (all ([s1 junk])
+                     (some ([s2 junk2])
+                           (is-string-prefix? s1 s2)))
+                (all ([s2 junk2])
+                      (some ([s3 junk3])
+                            (is-string-prefix? s2 s3))))
+           ib)))))
+    (println s)
+    (interpretation->relations (evaluate ib s))))
