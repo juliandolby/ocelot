@@ -112,30 +112,24 @@
   (for/all ([A (matrix-entries A)])
     (apply || A)))
 
-(define (get-value universe arity i)
-  ((universe-values universe)
-   (car (idx->tuple universe arity i))))
-
 (define (matrix/string? universe A)
   (for/all ([A (matrix-entries A)])
     (let ((arity (matrix-arity universe A)))
       (apply &&
 	     (for/list ([(v i) (in-indexed A)])
-		       (print v)
-		       (print (get-value universe arity i))
-		 (=> v (string? (get-value universe arity i))))))))
+               (=> v (string? (car (idx->tuple universe arity i)))))))))
 
 (define (matrix/string-prefix? universe A B)
   (for*/all ([A (matrix-entries A)][B (matrix-entries B)])
     (let ((arityA (matrix-arity universe A))
-	  (arityB (matrix-arity universe B)))
+          (arityB (matrix-arity universe B)))
       (apply &&
-        (for*/list ([(v i) (in-indexed A)]
-		    [(w j) (in-indexed B)])
-	  (let ((s1 (get-value universe arityA i))
-		(s2 (get-value universe arityB j)))
-	    (=> (and v w)
-		(and (stringish? s1) (stringish? s2) (not (stringish=? s1 s2)) (stringish-prefix? s2 s1)))))))))
+             (for*/list ([(v i) (in-indexed A)]
+                         [(w j) (in-indexed B)])
+               (let ((s1 (car (idx->tuple universe arityA i)))
+                     (s2 (car (idx->tuple universe arityB j))))
+                 (=> (and v w)
+                     (and (stringish? s1) (stringish? s2) (not (stringish=? s1 s2)) (stringish-prefix? s2 s1)))))))))
 
 ; does A contain a given tuple?
 (define (matrix/contains? universe tuple A)
