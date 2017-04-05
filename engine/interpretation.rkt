@@ -1,6 +1,7 @@
 #lang rosette
 
-(require "../lang/bounds.rkt" "../lang/universe.rkt" "matrix.rkt"
+(require "../lang/bounds.rkt" "../lang/universe.rkt"
+	 "matrix.rkt" "helpers.rkt"
          (only-in "../lang/ast.rkt" relation-arity)
          (prefix-in $ racket))
 (provide (all-defined-out))
@@ -36,11 +37,15 @@
   (define U (interpretation-universe (first interps)))
   (interpretation U (for*/list ([i interps][e (interpretation-entries i)]) e)))
 
-(define (interpretation->relations interp)
+(define (interpretation->relations interp [model #f])
   (match-define (interpretation U entries) interp)
   (for/hash ([pair entries])
     (match-define (cons rel mat) pair)
     (define contents (matrix-entries mat))
     (define arity (matrix-arity U contents))
     (values rel (for/list ([(x i) (in-indexed contents)] #:when x)
-                  (idx->tuple U arity i)))))
+			  (map (lambda (x)
+				 (if (and model (symbolic? x))
+				     (evaluate x model)
+				     x))
+			       (idx->tuple U arity i))))))
