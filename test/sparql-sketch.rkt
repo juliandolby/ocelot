@@ -58,33 +58,34 @@
         ib))))))
 
 (define ex2
-  (interpretation->relations
-   (evaluate ib
-     (solve
-      (assert
-       (interpret*
-        (and
-         (all ([s (join answers atoms)])
-              (some (join s (join triples atoms))))
-         (all ([s (join (join triples atoms) atoms)])
-              (and
-               (one (join s answers))
-               (all ([v (join atoms (join s triples))])
-                   (is-string-prefix? (join s answers) v)))))
-        ib))))))
+  (let ((model
+         (solve
+          (assert
+           (interpret*
+            (and
+             (all ([s (join answers atoms)])
+                  (some (join s (join triples atoms))))
+             (all ([s (join (join triples atoms) atoms)])
+                  (and
+                   (one (join s answers))
+                   (all ([v (join atoms (join s triples))])
+                        (is-string-prefix? (join s answers) v)))))
+            ib)))))
+      (interpretation->relations (evaluate ib model) model)))
+
 
 (define ex3
-  (interpretation->relations
-   (evaluate ib
-     (solve
-      (assert
-       (interpret*
-        (=
-         answers
-         (set ([s atoms] [v atoms])
-              (some ([p atoms])
-                    (in (-> s p v) triples))))
-        ib))))))
+  (let ((model
+         (solve
+          (assert
+           (interpret*
+            (=
+             answers
+             (set ([s atoms] [v atoms])
+                  (some ([p atoms])
+                        (in (-> s p v) triples))))
+            ib)))))
+      (interpretation->relations (evaluate ib model) model)))
 
 (define ex4
   (let ((m
