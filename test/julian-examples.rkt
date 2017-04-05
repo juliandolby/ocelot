@@ -87,7 +87,7 @@
                                 (is-string-prefix? s2 s3))))))
            ib)))))
     (println s)
-    (interpretation->relations (evaluate ib s))))
+    (interpretation->relations (evaluate ib s) s)))
 
 (define symbolic-example-2
   (let ((s
@@ -102,4 +102,4 @@
                             (is-string-prefix? s2 s3))))
            ib)))))
     (println s)
-    (interpretation->relations (evaluate ib s))))
+    (interpretation->relations (evaluate ib s) s)))
