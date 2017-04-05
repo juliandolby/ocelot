@@ -64,3 +64,16 @@
                (all ([v (join atoms (join s triples))])
                    (is-string-prefix? (join s answers) v)))))
         ib))))))
+
+(define ex3
+  (interpretation->relations
+   (evaluate ib
+     (solve
+      (assert
+       (interpret*
+        (=
+         answers
+         (set ([s atoms] [v atoms])
+              (some ([p atoms])
+                    (in (-> s p v) triples))))
+        ib))))))
