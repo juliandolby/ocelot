@@ -29,14 +29,16 @@
 (define (check-args op args type?
                     #:same-arity? [same-arity? #f] #:arity [arity #f]
                     #:min-length [min-length 2] #:max-length [max-length #f]
-                    #:join? [join? #f] #:domain? [domain? #f] #:range? [range? #f])
+                    #:join? [join? #f] #:domain? [domain? #f]
+		    #:range? [range? #f]
+		    #:explicit-function? [explicit-function? #f])
   (when (< (length args) min-length)
     (raise-arguments-error op "not enough arguments" "required" min-length "got" (length args)))
   (unless (false? max-length)
     (when (> (length args) max-length)
       (raise-arguments-error op "too many arguments" "maximum" max-length "got" (length args))))
   (for ([a args])
-    (unless (type? a)
+    (unless (or (type? a) (and explicit-function? (procedure? a)))
       (raise-argument-error op (~v type?) a))
     (unless (false? arity)
       (unless (equal? (node/expr-arity a) arity)
@@ -214,6 +216,8 @@
 
 (define-formula-op is-string? node/expr? #:same-arity? #t #:min-length 1 #:max-length 1 #:lift @string?)
 (define-formula-op is-string-prefix? node/expr? #:same-arity? #t #:min-length 2 #:max-length 2 #:lift @string-prefix?)
+(define-formula-op apply-unary-predicate node/expr? #:explicit-function? #t #:min-length 2 #:max-length 2)
+(define-formula-op apply-binary-predicate node/expr? #:explicit-function? #t #:min-length 3 #:max-length 3)
 
 (define-formula-op && node/formula? #:min-length 1 #:lift @&&)
 (define-formula-op || node/formula? #:min-length 1 #:lift @||)

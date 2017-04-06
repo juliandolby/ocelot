@@ -113,6 +113,10 @@
      (interpret-formula-short-circuit rec args || #f #t)]
     [(? node/formula/op/=>?)
      (or (not (rec (first args))) (rec (second args)))]
+    [(? node/formula/op/apply-unary-predicate?)
+     (matrix/apply-unary-predicate universe (first args) (rec (second args)))]
+    [(? node/formula/op/apply-binary-predicate?)
+     (matrix/apply-binary-predicate universe (first args) (rec (second args)) (rec (third args)))]
     [_ (let ([args ($map rec args)])
          (match op
            [(? node/formula/op/is-string-prefix??)

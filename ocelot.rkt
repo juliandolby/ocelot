@@ -18,6 +18,7 @@
  one lone
  unary-op?
  (struct-out prefab)
+ apply-unary-predicate apply-binary-predicate
  is-string? is-string-prefix?
 ; lang/bounds.rkt
  make-bound make-exact-bound make-upper-bound make-product-bound

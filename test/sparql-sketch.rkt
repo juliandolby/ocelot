@@ -1,5 +1,7 @@
 #lang rosette
 
+(current-bitwidth #f)
+
 (define uris '(uri1 uri2 uri3 uri4 uri5))
 
 (define-symbolic S1 string?)
@@ -41,27 +43,27 @@
 
 ;;
 
+(define (solve-it x)
+  (solver-clear (current-solver))
+  (solver-assert (current-solver) (list (interpret* x ib)))
+  (solver-check (current-solver)))
+
 (define ex1
-  (interpretation->relations
-   (evaluate ib
-     (solve
-      (assert
-       (interpret*
-        (and
-         (all ([s (join answers atoms)])
-              (some (join s (join triples atoms))))
-         (all ([s (join (join triples atoms) atoms)])
-              (and
-               (one (join s answers))
-               (all ([v (join atoms (join s triples))])
-                   (in v (join s answers))))))
-        ib))))))
+  (let ((model
+         (solve-it
+          (and
+           (all ([s (join answers atoms)])
+                (some (join s (join triples atoms))))
+           (all ([s (join (join triples atoms) atoms)])
+                (and
+                 (one (join s answers))
+                 (all ([v (join atoms (join s triples))])
+                      (in v (join s answers)))))))))
+    (interpretation->relations (evaluate ib model) model)))
 
 (define ex2
   (let ((model
-         (solve
-          (assert
-           (interpret*
+         (solve-it
             (and
              (all ([s (join answers atoms)])
                   (some (join s (join triples atoms))))
@@ -69,34 +71,35 @@
                   (and
                    (one (join s answers))
                    (all ([v (join atoms (join s triples))])
-                        (is-string-prefix? (join s answers) v)))))
-            ib)))))
+                        (is-string-prefix? (join s answers) v))))))))
       (interpretation->relations (evaluate ib model) model)))
-
 
 (define ex3
   (let ((model
-         (solve
-          (assert
-           (interpret*
-            (=
-             answers
-             (set ([s atoms] [v atoms])
-                  (some ([p atoms])
-                        (in (-> s p v) triples))))
-            ib)))))
+         (solve-it
+          (=
+           answers
+           (set ([s atoms] [nn atoms])
+                (some ([p atoms] [n atoms])
+                      (and (apply-binary-predicate
+                            (lambda (x y)
+                              (and (string? x)
+                                   (string? y)
+                                   (> (string-length x) 0)
+                                   (> (string-length y) 0)
+                                   (not (string=? x y))
+                                   (string-prefix? x y)))
+                            n nn)
+                           (in (-> s p n) triples))))))))
       (interpretation->relations (evaluate ib model) model)))
 
 (define ex4
   (let ((m
-         (solve
-          (assert
-           (interpret*
-            (=
-             answers
-             (set ([s atoms] [nn atoms])
-                  (some ([p atoms] [n atoms])
-                        (and (is-string-prefix? nn n)
-                             (in (-> s p n) triples)))))
-            ib)))))
-      (interpretation->relations (evaluate ib m) m)))
+         (solve-it
+          (=
+           answers
+           (set ([s atoms] [nn atoms])
+                (some ([p atoms] [n atoms])
+                      (and (is-string-prefix? nn n)
+                           (in (-> s p n) triples))))))))
+    (interpretation->relations (evaluate ib m) m)))

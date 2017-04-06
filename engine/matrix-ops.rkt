@@ -112,6 +112,24 @@
   (for/all ([A (matrix-entries A)])
     (apply || A)))
 
+(define (matrix/apply-unary-predicate universe f A)
+  (for/all ([A (matrix-entries A)])
+    (let ((arity (matrix-arity universe A)))
+      (apply &&
+	     (for/list ([(v i) (in-indexed A)])
+               (=> v (f (car (idx->tuple universe arity i)))))))))
+
+(define (matrix/apply-binary-predicate universe f A B)
+  (for*/all ([A (matrix-entries A)][B (matrix-entries B)])
+    (let ((arityA (matrix-arity universe A))
+          (arityB (matrix-arity universe B)))
+      (apply &&
+             (for*/list ([(v i) (in-indexed A)]
+                         [(w j) (in-indexed B)])
+               (let ((s1 (car (idx->tuple universe arityA i)))
+                     (s2 (car (idx->tuple universe arityB j))))
+                 (=> (and v w) (f s1 s2))))))))
+
 (define (matrix/string? universe A)
   (for/all ([A (matrix-entries A)])
     (let ((arity (matrix-arity universe A)))
