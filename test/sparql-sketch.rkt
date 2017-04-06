@@ -7,7 +7,7 @@
 (define-symbolic S1 string?)
 (define-symbolic S2 string?)
 
-(define values (append '("Rob" "Robert" "Jon" "Jonathon") (list S1 S2)))
+(define values (append '("Rob" "Robert" "Jon" "Jonathon" "Paula") (list S1 S2)))
 
 (require ocelot)
 
@@ -18,8 +18,9 @@
 (define triples-bound
   (make-exact-bound
    triples
-   '((uri1 uri3 "Robert")
-     (uri2 uri3 "Jonathon"))))
+   '((uri1 uri5 "Robert")
+     (uri2 uri5 "Jonathon")
+     (uri3 uri5 "Paula"))))
 
 (define entities (declare-relation 1 "URIs"))
 
@@ -77,20 +78,21 @@
 (define ex3
   (let ((model
          (solve-it
-          (=
-           answers
-           (set ([s atoms] [nn atoms])
-                (some ([p atoms] [n atoms])
-                      (and (apply-binary-predicate
-                            (lambda (x y)
-                              (and (string? x)
-                                   (string? y)
-                                   (> (string-length x) 0)
-                                   (> (string-length y) 0)
-                                   (not (string=? x y))
-                                   (string-prefix? x y)))
-                            n nn)
-                           (in (-> s p n) triples))))))))
+          (and
+           (= (join triples atoms atoms) (join answers atoms))
+           (=
+            answers
+            (set ([s atoms] [nn atoms])
+                 (some ([p atoms] [n atoms])
+                       (and (apply-binary-predicate
+                             (lambda (x y)
+                               (and (string? x)
+                                    (string? y)
+                                    (> (string-length y) 0)
+                                    (> (string-length x) (string-length y))
+                                    (string-prefix? x y)))
+                             n nn)
+                            (in (-> s p n) triples)))))))))
       (interpretation->relations (evaluate ib model) model)))
 
 (define ex4
