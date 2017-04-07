@@ -7,7 +7,7 @@
 (define-symbolic S1 string?)
 (define-symbolic S2 string?)
 
-(define values (append '("Rob" "Robert" "Jon" "Jonathon" "Paula") (list S1 S2)))
+(define values (append '("Rob" "Robert" "Jon" "Jonathon" "Paula" "Allison") (list S1 S2)))
 
 (require ocelot)
 
@@ -20,7 +20,8 @@
    triples
    '((uri1 uri5 "Robert")
      (uri2 uri5 "Jonathon")
-     (uri3 uri5 "Paula"))))
+     (uri3 uri5 "Paula")
+     (uri4 uri5 "Allison"))))
 
 (define entities (declare-relation 1 "URIs"))
 
@@ -82,8 +83,8 @@
            (= (join triples atoms atoms) (join answers atoms))
            (=
             answers
-            (set ([s atoms] [nn atoms])
-                 (some ([p atoms] [n atoms])
+            (set ([s entities] [nn literals])
+                 (some ([p entities] [n literals])
                        (and (apply-binary-predicate
                              (lambda (x y)
                                (and (string? x)
@@ -100,8 +101,8 @@
          (solve-it
           (=
            answers
-           (set ([s atoms] [nn atoms])
-                (some ([p atoms] [n atoms])
+           (set ([s entities] [nn literals])
+                (some ([p entities] [n literals])
                       (and (is-string-prefix? nn n)
                            (in (-> s p n) triples))))))))
     (interpretation->relations (evaluate ib m) m)))
