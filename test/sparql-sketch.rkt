@@ -54,9 +54,9 @@
   (let ((model
          (solve-it
           (and
-           (all ([s (join answers atoms)])
-                (some (join s (join triples atoms))))
-           (all ([s (join (join triples atoms) atoms)])
+           (all ([s (join answers literals)])
+                (some (join s (join triples literals))))
+           (all ([s (join (join triples literals) entities)])
                 (and
                  (one (join s answers))
                  (all ([v (join atoms (join s triples))])
@@ -67,12 +67,12 @@
   (let ((model
          (solve-it
             (and
-             (all ([s (join answers atoms)])
-                  (some (join s (join triples atoms))))
-             (all ([s (join (join triples atoms) atoms)])
+             (all ([s (join answers literals)])
+                  (some (join s (join triples literals))))
+             (all ([s (join (join triples literals) entities)])
                   (and
                    (one (join s answers))
-                   (all ([v (join atoms (join s triples))])
+                   (all ([v (join entities (join s triples))])
                         (is-string-prefix? (join s answers) v))))))))
       (interpretation->relations (evaluate ib model) model)))
 
@@ -80,7 +80,7 @@
   (let ((model
          (solve-it
           (and
-           (= (join triples atoms atoms) (join answers atoms))
+           (= (join (join triples literals) entities) (join answers literals))
            (=
             answers
             (set ([s entities] [nn literals])
