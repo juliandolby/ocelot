@@ -123,4 +123,18 @@
                          (some ([p2 entities])
                                (in (-> t p2 v) triples)))))))))
     (interpretation->relations (evaluate ib m) m)))
-    
+
+(define ex6
+  (let ((m
+         (solve-it
+          (= answers
+             (set ([s entities] [v literals])
+                  (and
+                   (some ([p entities])
+                         (in (-> s p v) triples))
+                   (apply-unary-predicate
+                    (lambda (s)
+                      (and (string? s)
+                           (< (string-length s) 7)))
+                    v)))))))
+    (interpretation->relations (evaluate ib m) m)))
