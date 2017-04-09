@@ -2,7 +2,7 @@
 
 (current-bitwidth #f)
 
-(define uris '(uri1 uri2 uri3 uri4 uri5))
+(define uris '(uri1 uri2 uri3 uri4 uri5 uri6 uri7))
 
 (define-symbolic S1 string?)
 (define-symbolic S2 string?)
@@ -21,7 +21,9 @@
    '((uri1 uri5 "Robert")
      (uri2 uri5 "Jonathon")
      (uri3 uri5 "Paula")
-     (uri4 uri5 "Allison"))))
+     (uri4 uri5 "Allison")
+     (uri6 uri7 uri1)
+     (uri6 uri7 uri3))))
 
 (define entities (declare-relation 1 "URIs"))
 
@@ -46,9 +48,11 @@
 ;;
 
 (define (solve-it x)
-  (solver-clear (current-solver))
-  (solver-assert (current-solver) (list (interpret* x ib)))
-  (solver-check (current-solver)))
+  (time
+   (begin
+     (solver-clear (current-solver))
+     (solver-assert (current-solver) (list (interpret* x ib)))
+     (solver-check (current-solver)))))
 
 (define ex1
   (let ((model
@@ -106,3 +110,17 @@
                       (and (is-string-prefix? nn n)
                            (in (-> s p n) triples))))))))
     (interpretation->relations (evaluate ib m) m)))
+
+(define ex5
+  (let ((m
+         (solve-it
+          (= answers
+             (set ([s entities] [v literals])
+                  (some ([t entities])
+                        (and
+                         (some ([p1 entities])
+                               (in (-> s p1 t) triples))
+                         (some ([p2 entities])
+                               (in (-> t p2 v) triples)))))))))
+    (interpretation->relations (evaluate ib m) m)))
+    
