@@ -137,10 +137,13 @@
         (for/all ([A (matrix-entries (car args))])
           (let ([arityA (matrix-arity universe A)])
             (apply &&
-                   (for/list ([(v i) (in-indexed A)])
-                     (loop (cdr args)
-                           (and pre v)
-                           (append x (list (car (idx->tuple universe arityA i))))))))))))
+                   (for/list ([(v i) (in-indexed A)] #:unless ($false? v))
+                     (let ([pre* (&& pre v)])
+                       (if ($false? pre*)
+                           #t
+                           (loop (cdr args)
+                                 pre*
+                                 (append x (list (car (idx->tuple universe arityA i))))))))))))))
 
 (define (matrix/string? universe A)
   (for/all ([A (matrix-entries A)])
