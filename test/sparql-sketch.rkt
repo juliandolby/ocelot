@@ -89,7 +89,7 @@
             answers
             (set ([s entities] [nn literals])
                  (some ([p entities] [n literals])
-                       (and (apply-binary-predicate
+                       (and (apply-predicate
                              (lambda (x y)
                                (and (string? x)
                                     (string? y)
@@ -132,7 +132,7 @@
                   (and
                    (some ([p entities])
                          (in (-> s p v) triples))
-                   (apply-unary-predicate
+                   (apply-predicate
                     (lambda (s)
                       (and (string? s)
                            (< (string-length s) 7)))

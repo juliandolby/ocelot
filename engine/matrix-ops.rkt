@@ -130,6 +130,18 @@
                      (s2 (car (idx->tuple universe arityB j))))
                  (=> (and v w) (f s1 s2))))))))
 
+(define (matrix/apply-predicate universe f args)
+  (let loop ([args args][pre #t][x '()])
+    (if (null? args)
+        (=> pre (apply f x))
+        (for/all ([A (matrix-entries (car args))])
+          (let ([arityA (matrix-arity universe A)])
+            (apply &&
+                   (for/list ([(v i) (in-indexed A)])
+                     (loop (cdr args)
+                           (and pre v)
+                           (append x (list (car (idx->tuple universe arityA i))))))))))))
+
 (define (matrix/string? universe A)
   (for/all ([A (matrix-entries A)])
     (let ((arity (matrix-arity universe A)))
