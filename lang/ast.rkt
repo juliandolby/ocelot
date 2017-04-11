@@ -218,7 +218,7 @@
 (define-formula-op is-string-prefix? node/expr? #:same-arity? #t #:min-length 2 #:max-length 2 #:lift @string-prefix?)
 (define-formula-op apply-unary-predicate node/expr? #:explicit-function? #t #:min-length 2 #:max-length 2)
 (define-formula-op apply-binary-predicate node/expr? #:explicit-function? #t #:min-length 3 #:max-length 3)
-(define-formula-op apply-predicate node/expr? #:explicit-function? #t #:min-length 1)
+(define-formula-op apply-predicate node/expr? #:explicit-function? #t)
 
 (define-formula-op && node/formula? #:min-length 1 #:lift @&&)
 (define-formula-op || node/formula? #:min-length 1 #:lift @||)
