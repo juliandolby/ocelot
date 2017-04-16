@@ -184,3 +184,16 @@
                    (triple _ _ s)
                    (triple s 'uri5 v)))))))
     (interpretation->relations (evaluate ib m) m)))
+
+(define ex9
+  (let ((m
+         (solve-it
+          (= answers
+             (set ([s entities] [v literals])
+                  (and
+                   (apply-predicate
+                    (lambda (s)
+                      (and (string? s) (> (string-length s) 6)))
+                    v)
+                   (triple s 'uri5 v)))))))
+    (interpretation->relations (evaluate ib m) m)))
