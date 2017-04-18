@@ -218,8 +218,6 @@
 
 
 
-(define (maxel l) (if (eq? l '()) -1 (car (reverse (sort l <)))))
-
 (define-symbolic i1 integer?)
 
 (define (iop i) (and ([choose > = <] i i1) (< 0 i1)))
@@ -241,8 +239,8 @@
               (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
             )
          )))
-     (assert (<= i1 (maxel (map (lambda (t) (string-length (car t)))
-                                (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
+     (assert (<= i1 (apply max (map (lambda (t) (string-length (car t)))
+                                    (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
      (print-forms m)
      (println (evaluate i1 m))
      (println (interpretation->relations (evaluate ib m) m))))
