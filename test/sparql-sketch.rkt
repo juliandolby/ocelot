@@ -14,6 +14,7 @@
 (define all-atoms (append uris values))
 
 (require ocelot)
+(require rosette/lib/synthax)
 
 (define U (universe all-atoms))
 
@@ -28,6 +29,22 @@
      (uri4 uri5 "Allison")
      (uri6 uri7 uri1)
      (uri6 uri7 uri3))))
+
+(define yes-triples (declare-relation 3 "Triples"))
+
+(define yes-triples-bound
+  (make-exact-bound
+   yes-triples
+   '((uri1 uri5 "Rob")
+     (uri2 uri5 "Jon"))))
+
+(define no-triples (declare-relation 3 "NoTriples"))
+
+(define no-triples-bound
+  (make-exact-bound
+   no-triples
+   '((uri3 uri5 "Paula"))))
+
 
 (define entities (declare-relation 1 "URIs"))
 
@@ -52,7 +69,7 @@
 (define (is-atom? a)
   (hash-has-key? atom-relations a))
 
-(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound atoms-bound triples-bound))))
+(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound atoms-bound triples-bound yes-triples-bound no-triples-bound))))
 
 (define ib (instantiate-bounds limits))
 
@@ -197,3 +214,36 @@
                     v)
                    (triple s 'uri5 v)))))))
     (interpretation->relations (evaluate ib m) m)))
+
+
+
+
+;(define (maxel l) (if (eq? l '()) -1 (car (reverse (sort l <)))))
+
+(define-symbolic i1 integer?)
+
+; does not work since literals is a relation
+;(assert (<= i1 (maxel (map (lambda (s) (string-length s)) literals))))
+
+(define (iop i) (and ([choose > = <] i i1) (< 0 i1)))
+
+
+
+(define ex10
+  (let ((m (solve-it
+           (and
+             (= answers (set ([s entities] [v literals])
+               (and (apply-predicate (lambda (ss) (and (string? ss) (iop (string-length ss)))) v)
+                    (triple s 'uri5 v))))
+             
+             (all ([s (join (join yes-triples literals) entities)])
+              (and (some (join s answers))
+                   (all ([v (join atoms (join s yes-triples))]) (in v (join s answers)))))
+             
+             (all ([s (join (join no-triples literals) entities)])
+              (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
+            )
+         ))) 
+     (print-forms m)
+     (println (evaluate i1 m))
+     (println (interpretation->relations (evaluate ib m) m))))
