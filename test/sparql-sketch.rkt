@@ -218,12 +218,9 @@
 
 
 
-;(define (maxel l) (if (eq? l '()) -1 (car (reverse (sort l <)))))
+(define (maxel l) (if (eq? l '()) -1 (car (reverse (sort l <)))))
 
 (define-symbolic i1 integer?)
-
-; does not work since literals is a relation
-;(assert (<= i1 (maxel (map (lambda (s) (string-length s)) literals))))
 
 (define (iop i) (and ([choose > = <] i i1) (< 0 i1)))
 
@@ -243,7 +240,9 @@
              (all ([s (join (join no-triples literals) entities)])
               (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
             )
-         ))) 
+         )))
+     (assert (<= i1 (maxel (map (lambda (t) (string-length (car t)))
+                                (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
      (print-forms m)
      (println (evaluate i1 m))
      (println (interpretation->relations (evaluate ib m) m))))
