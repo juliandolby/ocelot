@@ -30,20 +30,21 @@
      (uri6 uri7 uri1)
      (uri6 uri7 uri3))))
 
-(define yes-triples (declare-relation 3 "Triples"))
+(define yes-triples (declare-relation 3 "YesTriples"))
 
 (define yes-triples-bound
   (make-exact-bound
    yes-triples
-   '((uri1 uri5 "Rob")
-     (uri2 uri5 "Jon"))))
+   '((uri1 uri5 "Robert")
+     (uri3 uri5 "Paula"))))
 
 (define no-triples (declare-relation 3 "NoTriples"))
 
 (define no-triples-bound
   (make-exact-bound
    no-triples
-   '((uri3 uri5 "Paula"))))
+   '((uri2 uri5 "Jonathon")
+     (uri3 uri5 "Allison"))))
 
 
 (define entities (declare-relation 1 "URIs"))
