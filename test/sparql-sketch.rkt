@@ -287,3 +287,28 @@
      (print-forms m)
      (println (evaluate i1 m))
      (println (interpretation->relations (evaluate ib m) m))))
+
+
+; alternative property path test, but similar problem with symbolic values
+; if below 'uri5, 'uri7 are replaced by (first ps)
+
+(define (propertypath l allprops) 
+ (for/list ([i l]) 
+   (define-symbolic* idx integer?)
+   (list-ref allprops idx)))
+
+(define (propertypath* l allprops) 
+ (define-symbolic* n integer?) 
+ (take (propertypath l allprops) n))
+
+(define (propertypath-end e1 ps s v)
+ (if (empty? ps) #f
+     (if (= 1 (length ps)) (triple s 'uri5 v) 
+         (if (eq? e1 _)
+             (some ([e0 entities]) (and (triple e0 'uri7 s) (propertypath-end e0 (rest ps) s v)))
+             (some ([e2 entities]) (and (triple e2 (first ps) e1) (propertypath-end e2 (rest ps) s v))))
+        )))
+
+(define pp (propertypath 2 uris))
+(define model (solve (assert (propertypath-end _ pp 'uri1 "Robert"))))
+(evaluate (first pp) model)
