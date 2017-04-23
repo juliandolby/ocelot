@@ -219,7 +219,7 @@
 
 
 
-(define-symbolic i1 integer?)
+(define-symbolic i1 i2 i3 integer?)
 
 (define (iop i) (and ([choose > = <] i i1) (< 0 i1)))
 
@@ -246,8 +246,73 @@
      (println (evaluate i1 m))
      (println (interpretation->relations (evaluate ib m) m))))
 
+; example predicates, not yet used
+(define (p-eq s v) (and (string? v) (= (string-length v) i2)))
+(define (p-ge s v) (and (string? v) (>= (string-length v) i3)))
+
+(define (p s v) ([choose p-eq p-ge] s v))
+
+
+; cannot use these in the below definition instead of 'uri7, 'uri5. complication with triple definition
+(define-symbolic* s1 s2 string?)
+
+(define-synthax (property-path-endh e1 s v length)
+#:base (triple s 'uri5 v)
+#:else (if (eq? e1 _)
+          (some ([e2 entities]) (and (triple e2 'uri7 s) (property-path-endh e2 s v (- length 1)))) 
+          (some ([e2 entities]) (and (triple e2 'uri7 e1) (property-path-endh e2 s v (- length 1)))) 
+        ))
+
+(define (property-path-end s v)
+ (property-path-endh _ s v 1))
+
 
 (define ex11
+  (let ((m (solve-it
+           (and
+             (= answers (set ([s entities] [v literals]) (property-path-end s v)
+               ))
+             
+             (all ([s (join (join yes-triples literals) entities)])
+              (and (some (join s answers))
+                   (all ([v (join atoms (join s yes-triples))]) (in v (join s answers)))))
+             
+             (all ([s (join (join no-triples literals) entities)])
+              (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
+            )
+         )))
+     (assert (<= i1 (apply max (map (lambda (t) (string-length (car t)))
+                                    (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
+     (print-forms m)
+     (println (evaluate i1 m))
+     (println (interpretation->relations (evaluate ib m) m))))
+
+
+; alternative property path test, but similar problem with symbolic values
+; if below 'uri5, 'uri7 are replaced by (first ps)
+
+(define (propertypath l allprops) 
+ (for/list ([i l]) 
+   (define-symbolic* idx integer?)
+   (list-ref allprops idx)))
+
+(define (propertypath* l allprops) 
+ (define-symbolic* n integer?) 
+ (take (propertypath l allprops) n))
+
+(define (propertypath-end e1 ps s v)
+ (if (empty? ps) #f
+     (if (= 1 (length ps)) (triple s 'uri5 v) 
+         (if (eq? e1 _)
+             (some ([e0 entities]) (and (triple e0 'uri7 s) (propertypath-end e0 (rest ps) s v)))
+             (some ([e2 entities]) (and (triple e2 (first ps) e1) (propertypath-end e2 (rest ps) s v))))
+        )))
+
+(define pp (propertypath 2 uris))
+(define model (solve (assert (propertypath-end _ pp 'uri1 "Robert"))))
+(evaluate (first pp) model)
+
+(define ex12
   (let ((m
          (solve-it
           (= answers
@@ -268,7 +333,7 @@
                                   (triple s1 'uri5 v1)))))))))))
     (interpretation->relations (evaluate ib m) m)))
 
-(define ex12
+(define ex13
   (let ((m
          (solve-it
           (and
@@ -285,3 +350,4 @@
                                   (not (equal? a b))))
                            v v1))))))))))
     (interpretation->relations (evaluate ib m) m)))
+
