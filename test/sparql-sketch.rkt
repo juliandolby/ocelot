@@ -285,7 +285,7 @@
                                     (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
      (print-forms m)
      (println (evaluate i1 m))
-     (println (interpretation->relations (evaluate ib m) m))))
+     (interpretation->relations (evaluate ib m) m)))
 
 
 ; alternative property path test, but similar problem with symbolic values
