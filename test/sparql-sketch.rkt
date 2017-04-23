@@ -245,3 +245,43 @@
      (print-forms m)
      (println (evaluate i1 m))
      (println (interpretation->relations (evaluate ib m) m))))
+
+
+(define ex11
+  (let ((m
+         (solve-it
+          (= answers
+             (set ([s entities] [v literals])
+                  (and
+                   (apply-predicate
+                    (lambda (s)
+                      (and (string? s) (> (string-length s) 6)))
+                    v)
+                   (triple s 'uri5 v)
+                   (not (in (-> s v)
+                            (set ([s1 entities] [v1 literals])
+                                 (and
+                                  (apply-predicate
+                                   (lambda (s)
+                                     (and (string? s) (> (string-length s) 7)))
+                                   v1)
+                                  (triple s1 'uri5 v1)))))))))))
+    (interpretation->relations (evaluate ib m) m)))
+
+(define ex12
+  (let ((m
+         (solve-it
+          (and
+           (some answers)
+           (= answers
+              (set ([s entities] [v literals])
+                   (some
+                    (set ([v1 literals])
+                         (and
+                          (triple s 'uri5 v1)
+                          (apply-predicate
+                           (lambda (a b)
+                             (and (string-prefix? a b)
+                                  (not (equal? a b))))
+                           v v1))))))))))
+    (interpretation->relations (evaluate ib m) m)))
