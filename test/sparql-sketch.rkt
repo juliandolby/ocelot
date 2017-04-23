@@ -341,6 +341,10 @@
                  (apply-predicate
                   (lambda (v) (equal? v "AllisonOne"))
                   v2))
+           (some ([v2 (join entities answers)])
+                 (apply-predicate
+                  (lambda (v) (equal? v "PaulaOne"))
+                  v2))
            (= answers
               (set ([s entities] [v literals])
                    (some
