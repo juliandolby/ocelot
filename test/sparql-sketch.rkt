@@ -358,3 +358,22 @@
                            v v1))))))))))
     (interpretation->relations (evaluate ib m) m)))
 
+(define-syntax ppx
+  (syntax-rules ()
+    ((_ from (pred) to)
+     (triple from pred to))
+    ((_ from (pred1 pred2 ...) to)
+     (let ((s (gensym)))
+       (some ([s entities])
+	     (and
+	      (triple from pred1 s)
+	      (ppx s (pred2 ...) to)))))))
+
+(define ex14
+  (let ((m
+	 (solve-it
+	  (= answers
+	     (set ([s entities] [v literals])
+		  (ppx s (_ _) v))))))
+    (interpretation->relations (evaluate ib m) m)))
+
