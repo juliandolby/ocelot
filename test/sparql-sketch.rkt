@@ -4,12 +4,12 @@
 
 (current-bitwidth #f)
 
-(define uris '(uri1 uri2 uri3 uri4 uri5 uri6 uri7))
+(define uris '(uri1 uri2 uri3 uri4 uri5 uri6 uri7 uri8 uri9))
 
 (define-symbolic S1 string?)
 (define-symbolic S2 string?)
 
-(define values (append '("Rob" "Robert" "Jon" "Jonathon" "Paula" "Allison") (list S1 S2)))
+(define values (append '("Rob" "Robert" "Jon" "Jonathon" "Paula" "Allison" "Christian" "Christa") (list S1 S2)))
 
 (define all-atoms (append uris values))
 
@@ -27,8 +27,11 @@
      (uri2 uri5 "Jonathon")
      (uri3 uri5 "Paula")
      (uri4 uri5 "Allison")
+     (uri8 uri5 "Christian")
+     (uri9 uri5 "Christa")
      (uri6 uri7 uri1)
-     (uri6 uri7 uri3))))
+     (uri6 uri7 uri3)
+     (uri6 uri7 uri8))))
 
 (define yes-triples (declare-relation 3 "YesTriples"))
 
@@ -37,6 +40,25 @@
    yes-triples
    '((uri1 uri5 "Robert")
      (uri3 uri5 "Paula"))))
+
+(define yes-triples1 (declare-relation 3 "YesTriples1"))
+
+(define yes-triples1-bound
+  (make-exact-bound
+   yes-triples1
+   '((uri1 uri5 "Robert")
+     (uri3 uri5 "Paula")
+     (uri8 uri5 "Christian"))))
+
+(define yes-triples2 (declare-relation 3 "YesTriples2"))
+
+(define yes-triples2-bound
+  (make-exact-bound
+   yes-triples2
+   '((uri1 uri5 "Robert")
+     (uri3 uri5 "Paula")
+     (uri8 uri5 "Christian")
+     (uri8 uri5 "Christa"))))
 
 (define no-triples (declare-relation 3 "NoTriples"))
 
@@ -70,7 +92,7 @@
 (define (is-atom? a)
   (hash-has-key? atom-relations a))
 
-(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound atoms-bound triples-bound yes-triples-bound no-triples-bound))))
+(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound no-triples-bound))))
 
 (define ib (instantiate-bounds limits))
 
@@ -126,25 +148,26 @@
                         (is-string-prefix? (join s answers) v))))))))
       (interpretation->relations (evaluate ib model) model)))
 
-(define ex3
-  (let ((model
-         (solve-it
-          (and
-           (= (join (join triples literals) entities) (join answers literals))
-           (=
-            answers
-            (set ([s entities] [nn literals])
-                 (some ([p entities] [n literals])
-                       (and (apply-predicate
-                             (lambda (x y)
-                               (and (string? x)
-                                    (string? y)
-                                    (> (string-length y) 0)
-                                    (> (string-length x) (string-length y))
-                                    (string-prefix? x y)))
-                             n nn)
-                            (in (-> s p n) triples)))))))))
-      (interpretation->relations (evaluate ib model) model)))
+; doesn't work as it is with the new relations
+;(define ex3
+;  (let ((model
+;         (solve-it
+;          (and
+;           (= (join (join triples literals) entities) (join answers literals))
+;           (=
+;            answers
+;            (set ([s entities] [nn literals])
+;                 (some ([p entities] [n literals])
+;                       (and (apply-predicate
+;                             (lambda (x y)
+;                               (and (string? x)
+;                                    (string? y)
+;                                    (> (string-length y) 0)
+;                                    (> (string-length x) (string-length y))
+;                                    (string-prefix? x y)))
+;                             n nn)
+;                            (in (-> s p n) triples)))))))))
+;      (interpretation->relations (evaluate ib model) model)))
 
 (define ex4
   (let ((m
@@ -219,7 +242,7 @@
 
 
 
-(define-symbolic i1 i2 i3 integer?)
+(define-symbolic i1 integer?)
 
 (define (iop i) (and ([choose > = <] i i1) (< 0 i1)))
 
@@ -244,33 +267,34 @@
                                     (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
      (print-forms m)
      (println (evaluate i1 m))
-     (println (interpretation->relations (evaluate ib m) m))))
-
-; example predicates, not yet used
-(define (p-eq s v) (and (string? v) (= (string-length v) i2)))
-(define (p-ge s v) (and (string? v) (>= (string-length v) i3)))
-
-(define (p s v) ([choose p-eq p-ge] s v))
+     (interpretation->relations (evaluate ib m) m)))
 
 
-; cannot use these in the below definition instead of 'uri7, 'uri5. complication with triple definition
-(define-symbolic* s1 s2 string?)
+(define-symbolic i2 i3 i4 i5 i6 integer?)
 
-(define-synthax (property-path-endh e1 s v length)
-#:base (triple s 'uri5 v)
-#:else (if (eq? e1 _)
-          (some ([e2 entities]) (and (triple e2 'uri7 s) (property-path-endh e2 s v (- length 1)))) 
-          (some ([e2 entities]) (and (triple e2 'uri7 e1) (property-path-endh e2 s v (- length 1)))) 
-        ))
+; comparison operators
+(define (comp-eq i) (= i i2))
+(define (comp-le i) (<= i i3))
+(define (comp-l i) (< i i4))
+(define (comp-ge i) (>= i i5))
+(define (comp-g i) (> i i6))
 
-(define (property-path-end s v)
- (property-path-endh _ s v 1))
+(define (strlen-comp s) (and (string? s) ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s))))
 
+(define (strlen-comp-union s) (and (string? s)
+                                   (or ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s))
+                                   ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s)))))
+
+
+(define (litlen-max m) (apply max (map (lambda (t) (string-length (car t)))
+                                    (hash-ref (interpretation->relations (evaluate ib m) m) literals))))
 
 (define ex11
   (let ((m (solve-it
            (and
-             (= answers (set ([s entities] [v literals]) (property-path-end s v)
+             (= answers (set ([s entities] [v literals])
+                              (and (apply-predicate (lambda (vv) ([choose strlen-comp strlen-comp-union] vv)) v)
+                                   (some ([p entities]) (triple s p v)))
                ))
              
              (all ([s (join (join yes-triples literals) entities)])
@@ -281,36 +305,14 @@
               (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
             )
          )))
-     (assert (<= i1 (apply max (map (lambda (t) (string-length (car t)))
-                                    (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
-     (print-forms m)
-     (println (evaluate i1 m))
-     (interpretation->relations (evaluate ib m) m)))
 
+    (map (lambda (i) (assert (<= i (+ (litlen-max m) 1))))  (list i2 i3 i4 i5 i6))
 
-; alternative property path test, but similar problem with symbolic values
-; if below 'uri5, 'uri7 are replaced by (first ps)
+    (print-forms m)
+    (println (evaluate i3 m))
+    (println (evaluate i4 m))
+    (interpretation->relations (evaluate ib m) m)))
 
-(define (propertypath l allprops) 
- (for/list ([i l]) 
-   (define-symbolic* idx integer?)
-   (list-ref allprops idx)))
-
-(define (propertypath* l allprops) 
- (define-symbolic* n integer?) 
- (take (propertypath l allprops) n))
-
-(define (propertypath-end e1 ps s v)
- (if (empty? ps) #f
-     (if (= 1 (length ps)) (triple s 'uri5 v) 
-         (if (eq? e1 _)
-             (some ([e0 entities]) (and (triple e0 'uri7 s) (propertypath-end e0 (rest ps) s v)))
-             (some ([e2 entities]) (and (triple e2 (first ps) e1) (propertypath-end e2 (rest ps) s v))))
-        )))
-
-(define pp (propertypath 2 uris))
-(define model (solve (assert (propertypath-end _ pp 'uri1 "Robert"))))
-(evaluate (first pp) model)
 
 (define ex12
   (let ((m
@@ -360,20 +362,71 @@
 
 (define-syntax ppx
   (syntax-rules ()
-    ((_ from (pred) to)
+    ((_ (pred) from to)
      (triple from pred to))
-    ((_ from (pred1 pred2 ...) to)
+    ((_ (pred1 pred2 ...) from to)
      (let ((s (gensym)))
        (some ([s entities])
 	     (and
 	      (triple from pred1 s)
-	      (ppx s (pred2 ...) to)))))))
+	      (ppx (pred2 ...) s to)))))))
+
 
 (define ex14
   (let ((m
 	 (solve-it
 	  (= answers
 	     (set ([s entities] [v literals])
-		  (ppx s (_ _) v))))))
+		  (ppx (_ _) s v))))))
     (interpretation->relations (evaluate ib m) m)))
 
+
+
+(define ex15
+  (let ((m (solve-it
+           (and
+             (= answers (set ([s entities] [v literals])
+                              (and (apply-predicate (lambda (vv) ([choose strlen-comp strlen-comp-union] vv)) v)
+                                   (some ([p entities]) (triple s p v)))
+               ))
+             
+             (all ([s (join (join yes-triples1 literals) entities)])
+              (and (some (join s answers))
+                   (all ([v (join atoms (join s yes-triples1))]) (in v (join s answers)))))
+             
+             (all ([s (join (join no-triples literals) entities)])
+              (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
+            )
+         )))
+
+    (map (lambda (i) (assert (<= i (litlen-max m) )))  (list i2 i3 i4 i5 i6))
+
+    (print-forms m)
+    (println (evaluate i3 m))
+    (println (evaluate i4 m))
+    (interpretation->relations (evaluate ib m) m)))
+
+; doesn't work yet because ppx is not of type procedure
+;(define ex16
+;  (let ((m (solve-it
+;           (and
+;             (= answers (set ([s entities] [v literals])
+;                              (and (apply-predicate (lambda (ss vv) ([choose strlen-comp strlen-comp-combi (curry ppx (_ _))] ss vv)) s v)                                  
+;                                   (some ([p entities]) (triple s p v)))
+;               ))
+;             
+;             (all ([s (join (join yes-triples2 literals) entities)])
+;              (and (some (join s answers))
+;                   (all ([v (join atoms (join s yes-triples2))]) (in v (join s answers)))))
+;             
+;             (all ([s (join (join no-triples literals) entities)])
+;              (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
+;            )
+;         )))
+;
+;    (map (lambda (i) (assert (<= i (litlen-max m) )))  (list i2 i3 i4 i5 i6))
+;
+;    (print-forms m)
+;    (println (evaluate i3 m))
+;    (println (evaluate i4 m))
+;    (println (interpretation->relations (evaluate ib m) m))))
