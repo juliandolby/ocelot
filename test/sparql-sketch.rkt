@@ -148,26 +148,25 @@
                         (is-string-prefix? (join s answers) v))))))))
       (interpretation->relations (evaluate ib model) model)))
 
-; doesn't work as it is with the new relations
-;(define ex3
-;  (let ((model
-;         (solve-it
-;          (and
-;           (= (join (join triples literals) entities) (join answers literals))
-;           (=
-;            answers
-;            (set ([s entities] [nn literals])
-;                 (some ([p entities] [n literals])
-;                       (and (apply-predicate
-;                             (lambda (x y)
-;                               (and (string? x)
-;                                    (string? y)
-;                                    (> (string-length y) 0)
-;                                    (> (string-length x) (string-length y))
-;                                    (string-prefix? x y)))
-;                             n nn)
-;                            (in (-> s p n) triples)))))))))
-;      (interpretation->relations (evaluate ib model) model)))
+(define ex3
+  (let ((model
+         (solve-it
+          (and
+           (some answers)
+           (=
+            answers
+            (set ([s entities] [nn literals])
+                 (some ([p entities] [n literals])
+                       (and (apply-predicate
+                             (lambda (x y)
+                               (and (string? x)
+                                    (string? y)
+                                    (> (string-length y) 0)
+                                    (> (string-length x) (string-length y))
+                                    (string-prefix? x y)))
+                             n nn)
+                            (in (-> s p n) triples)))))))))
+      (interpretation->relations (evaluate ib model) model)))
 
 (define ex4
   (let ((m
