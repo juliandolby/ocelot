@@ -11,7 +11,7 @@
 
 (define values (append '("Rob" "Robert" "Jon" "Jonathon" "Paula" "Allison" "Christian" "Christa") (list S1 S2)))
 
-(define all-atoms (append uris values))
+(define all-atoms (append uris values (list 'Null)))
 
 (require ocelot)
 (require rosette/lib/synthax)
@@ -81,9 +81,13 @@
 
 (define atoms-bound (make-exact-bound atoms (map list all-atoms)))
 
-(define answers (declare-relation 2 "Map"))
+(define answers (declare-relation 2 "AnswerPairs"))
 
 (define answers-bound (make-product-bound answers uris all-atoms))
+
+(define answer-triples (declare-relation 3 "AnswerTriples"))
+
+(define answer-triples-bound (make-product-bound answer-triples uris all-atoms all-atoms))
 
 (define atom-relations (make-hash (map (lambda (a) (cons a (declare-relation 1 a))) all-atoms)))
 
@@ -92,7 +96,7 @@
 (define (is-atom? a)
   (hash-has-key? atom-relations a))
 
-(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound no-triples-bound))))
+(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound no-triples-bound))))
 
 (define ib (instantiate-bounds limits))
 
@@ -403,6 +407,24 @@
     (print-forms m)
     (println (evaluate i3 m))
     (println (evaluate i4 m))
+    (interpretation->relations (evaluate ib m) m)))
+
+(define ex16
+  (let* ((null-rel (hash-ref atom-relations 'Null))
+         (m
+         (solve-it
+          (= answer-triples
+             (set ([s entities] [x atoms] [v literals])
+                  (and
+                   (triple s 'uri5 v)
+                   (or
+                    (triple x 'uri7 s)
+                    (and
+                     (in x null-rel)
+                     (not (in s
+                              (set ([s1 entities])
+                                   (some ([s2 entities])
+                                         (triple s2 'uri7 s1)))))))))))))
     (interpretation->relations (evaluate ib m) m)))
 
 ; doesn't work yet because ppx is not of type procedure
