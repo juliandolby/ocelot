@@ -427,6 +427,21 @@
                                          (triple s2 'uri7 s1)))))))))))))
     (interpretation->relations (evaluate ib m) m)))
 
+(define ex17
+  (let* ((null-rel (hash-ref atom-relations 'Null))
+         (m
+         (solve-it
+          (= answer-triples
+             (set ([s entities] [x atoms] [v literals])
+                  (and
+                   (triple s 'uri5 v)
+                   (or
+                    (triple x 'uri7 s)
+                    (and
+                     (in x null-rel)
+                     (not (triple _ 'uri7 s))))))))))
+    (interpretation->relations (evaluate ib m) m)))
+
 ; doesn't work yet because ppx is not of type procedure
 ;(define ex16
 ;  (let ((m (solve-it
