@@ -87,7 +87,7 @@
 
 (define answer-triples (declare-relation 3 "AnswerTriples"))
 
-(define answer-triples-bound (make-product-bound answer-triples uris all-atoms all-atoms))
+(define answer-triples-bound (make-product-bound answer-triples uris (cons 'Null uris) all-atoms))
 
 (define atom-relations (make-hash (map (lambda (a) (cons a (declare-relation 1 a))) all-atoms)))
 
@@ -440,6 +440,24 @@
                     (and
                      (in x null-rel)
                      (not (triple _ 'uri7 s))))))))))
+    (interpretation->relations (evaluate ib m) m)))
+
+(define-syntax optional
+  (syntax-rules ()
+    ((_ (v1 ...) x y)
+     (let* ((null-rel (hash-ref atom-relations 'Null)))
+        (and x
+            (or y
+                (and 
+                 (and (in v1 null-rel) ...)
+                 (no [(v1 atoms) ...]
+                     y))))))))
+
+(define ex18
+  (let ((m (solve-it
+            (= answer-triples
+               (set ([s entities] [x atoms] [v literals])
+                    (optional (x) (triple s 'uri5 v) (triple x 'uri7 s)))))))
     (interpretation->relations (evaluate ib m) m)))
 
 ; doesn't work yet because ppx is not of type procedure
