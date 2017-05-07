@@ -126,6 +126,32 @@
 
 ;;
 
+(define-symbolic* i1 i2 i3 i4 i5 i6 i7 integer?)
+
+(define sintegers (list i1 i2 i3 i4 i5 i6 i7))
+
+; comparison operators
+(define (comp-eq i) (= i i2))
+(define (comp-le i) (<= i i3))
+(define (comp-l i) (< i i4))
+(define (comp-ge i) (>= i i5))
+(define (comp-g i) (> i i6))
+(define (comp-uneq i) (not (= i i7)))
+
+;create simple numeric expression
+(define (numeric pred i)
+  (apply-predicate (lambda (v) (and (string? v) (pred (string-length v)))) i))
+
+(define (assert-max svalues max) (map (lambda (i) (assert (<= i (+ max 1)))) svalues))
+
+(define (litlen-max model) (apply max (map (lambda (t) (string-length (car t)))
+                                    (hash-ref (interpretation->relations (evaluate ib model) model) literals))))
+
+(define (printeval model svalues) (println (map (lambda (i) (evaluate i model)) svalues)))
+
+
+;;
+
 (define ex1
   (let ((model
          (solve-it
@@ -245,8 +271,6 @@
 
 
 
-(define-symbolic i1 integer?)
-
 (define (iop i) (and ([choose > = <] i i1) (< 0 i1)))
 
 
@@ -273,24 +297,11 @@
      (interpretation->relations (evaluate ib m) m)))
 
 
-(define-symbolic i2 i3 i4 i5 i6 integer?)
-
-; comparison operators
-(define (comp-eq i) (= i i2))
-(define (comp-le i) (<= i i3))
-(define (comp-l i) (< i i4))
-(define (comp-ge i) (>= i i5))
-(define (comp-g i) (> i i6))
-
 (define (strlen-comp s) (and (string? s) ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s))))
 
 (define (strlen-comp-union s) (and (string? s)
                                    (or ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s))
                                    ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s)))))
-
-
-(define (litlen-max m) (apply max (map (lambda (t) (string-length (car t)))
-                                    (hash-ref (interpretation->relations (evaluate ib m) m) literals))))
 
 (define ex11
   (let ((m (solve-it
@@ -460,27 +471,26 @@
                     (optional (x) (triple s 'uri5 v) (triple x 'uri7 s)))))))
     (interpretation->relations (evaluate ib m) m)))
 
-; doesn't work yet because ppx is not of type procedure
-;(define ex16
-;  (let ((m (solve-it
-;           (and
-;             (= answers (set ([s entities] [v literals])
-;                              (and (apply-predicate (lambda (ss vv) ([choose strlen-comp strlen-comp-combi (curry ppx (_ _))] ss vv)) s v)                                  
-;                                   (some ([p entities]) (triple s p v)))
-;               ))
-;             
-;             (all ([s (join (join yes-triples2 literals) entities)])
-;              (and (some (join s answers))
-;                   (all ([v (join atoms (join s yes-triples2))]) (in v (join s answers)))))
-;             
-;             (all ([s (join (join no-triples literals) entities)])
-;              (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
-;            )
-;         )))
-;
-;    (map (lambda (i) (assert (<= i (litlen-max m) )))  (list i2 i3 i4 i5 i6))
-;
-;    (print-forms m)
-;    (println (evaluate i3 m))
-;    (println (evaluate i4 m))
-;    (println (interpretation->relations (evaluate ib m) m))))
+; arguments: orexpr1 ...
+; with orexp1 := (andexpr1 ...)
+(define-syntax filter
+  (syntax-rules () 
+    ((_ (nexpr ...) ...)
+     (or (and nexpr ...) ...))))
+
+(define (boundedfilterex i)
+  (filter
+   ((numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
+    (numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i))
+   ((numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i))
+   ))
+
+(define ex19
+  (let ((m (solve-it
+            (= answer-triples
+               (set ([s entities] [x atoms] [v literals]) 
+                    (optional (x) (and (triple s 'uri5 v) (boundedfilterex v)) (triple x 'uri7 s)) )))))
+    (assert-max sintegers (litlen-max m))
+    (print-forms m)
+    (printeval m sintegers)
+    (interpretation->relations (evaluate ib m) m)))
