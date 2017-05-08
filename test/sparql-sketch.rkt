@@ -143,6 +143,12 @@
 (define (numeric pred i)
   (apply-predicate (lambda (v) (and (string? v) (pred (string-length v)))) i))
 
+(define (numeric1 pred i)
+  (apply-predicate (lambda (v) (pred v)) i))
+
+(define (strlen s)
+  (apply-predicate (lambda (v) (if (string? v) (string-length v) -1)) s))
+
 (define (assert-max svalues max) (map (lambda (i) (assert (<= i (+ max 1)))) svalues))
 
 (define (litlen-max model) (apply max (map (lambda (t) (string-length (car t)))
@@ -486,13 +492,7 @@
 #:else (choose*
        (filter i (- depth 1))
        (and (filter i (- depth 1)) (filter i (- depth 1)))
-       (or
-        (choose*
-         (filter i (- depth 1))
-         (and (filter i (- depth 1)) (filter i (- depth 1))))
-        (choose*
-         (filter i (- depth 1))
-         (and (filter i (- depth 1)) (filter i (- depth 1)))))))
+       (or (filter i (- depth 1)) (filter i (- depth 1)))))
 
 
 ; The body of filter-bounded is a hole to be filled with an
