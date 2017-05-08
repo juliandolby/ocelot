@@ -15,6 +15,7 @@
 
 (require ocelot)
 (require rosette/lib/synthax)
+(require rosette/lib/angelic)
 
 (define U (universe all-atoms))
 
@@ -473,23 +474,37 @@
 
 ; arguments: orexpr1 ...
 ; with orexp1 := (andexpr1 ...)
-(define-syntax filter
-  (syntax-rules () 
-    ((_ (nexpr ...) ...)
-     (or (and nexpr ...) ...))))
+;(define-syntax filter
+;  (syntax-rules () 
+;    ((_ (nexpr ...) ...)
+;     (or (and nexpr ...) ...))))
 
-(define (boundedfilterex i)
-  (filter
-   ((numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
-    (numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i))
-   ((numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i))
-   ))
+
+;and/or are considered to be binary currently
+(define-synthax (filter i depth)
+#:base (numeric [choose* comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
+#:else (choose*
+       (filter i (- depth 1))
+       (and (filter i (- depth 1)) (filter i (- depth 1)))
+       (or
+        (choose*
+         (filter i (- depth 1))
+         (and (filter i (- depth 1)) (filter i (- depth 1))))
+        (choose*
+         (filter i (- depth 1))
+         (and (filter i (- depth 1)) (filter i (- depth 1)))))))
+
+
+; The body of filter-bounded is a hole to be filled with an
+; expression of depth (up to) 1 from the filter grammar.
+(define (boundedfilter i)
+(filter i 1))
 
 (define ex19
   (let ((m (solve-it
             (= answer-triples
                (set ([s entities] [x atoms] [v literals]) 
-                    (optional (x) (and (triple s 'uri5 v) (boundedfilterex v)) (triple x 'uri7 s)) )))))
+                    (optional (x) (and (triple s 'uri5 v) (boundedfilter v)) (triple x 'uri7 s)) )))))
     (assert-max sintegers (litlen-max m))
     (print-forms m)
     (printeval m sintegers)
