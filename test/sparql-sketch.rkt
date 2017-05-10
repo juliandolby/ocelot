@@ -61,6 +61,15 @@
      (uri8 uri5 "Christian")
      (uri8 uri5 "Christa"))))
 
+(define yes-triples3 (declare-relation 3 "YesTriples3"))
+
+(define yes-triples3-bound
+  (make-exact-bound
+   yes-triples3
+   '((uri2 uri5 "Jonathon")
+     (uri4 uri5 "Allison")
+     (uri9 uri5 "Christa"))))
+
 (define no-triples (declare-relation 3 "NoTriples"))
 
 (define no-triples-bound
@@ -97,7 +106,7 @@
 (define (is-atom? a)
   (hash-has-key? atom-relations a))
 
-(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound no-triples-bound))))
+(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound yes-triples3-bound no-triples-bound))))
 
 (define ib (instantiate-bounds limits))
 
@@ -140,8 +149,8 @@
 (define (comp-uneq i) (not (= i i7)))
 
 ;create simple numeric expression
-(define (numeric pred i)
-  (apply-predicate (lambda (v) (and (string? v) (pred (string-length v)))) i))
+(define (numeric pred v)
+  (and (string? v) (pred (string-length v))))
 
 (define (numeric1 pred i)
   (apply-predicate (lambda (v) (pred v)) i))
@@ -487,25 +496,44 @@
 
 
 ;and/or are considered to be binary currently
-(define-synthax (filter i depth)
-#:base (numeric [choose* comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
-#:else (choose*
-       (filter i (- depth 1))
-       (and (filter i (- depth 1)) (filter i (- depth 1)))
-       (or (filter i (- depth 1)) (filter i (- depth 1)))))
-
-
+(define-synthax (filter-it i depth)
+#:base (numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
+#:else (choose
+        (numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
+        (and (filter-it i (- depth 1)) (filter-it i (- depth 1)))
+        (or (filter-it i (- depth 1)) (filter-it i (- depth 1)))))
+     
 ; The body of filter-bounded is a hole to be filled with an
 ; expression of depth (up to) 1 from the filter grammar.
 (define (boundedfilter i)
-(filter i 1))
+  (filter-it i 1))
 
 (define ex19
   (let ((m (solve-it
-            (= answer-triples
+            (= yes-triples3
                (set ([s entities] [x atoms] [v literals]) 
-                    (optional (x) (and (triple s 'uri5 v) (boundedfilter v)) (triple x 'uri7 s)) )))))
-    (assert-max sintegers (litlen-max m))
+                    (and (triple s x v) (apply-predicate (lambda (x) (boundedfilter x)) v)))))))
+    ;(assert-max sintegers (litlen-max m))
     (print-forms m)
-    (printeval m sintegers)
-    (interpretation->relations (evaluate ib m) m)))
+    ;(printeval m sintegers)
+    (interpretation->relations (evaluate ib m) m)
+    ))
+
+(define-symbolic v1 integer?)
+(define-symbolic v2 integer?)
+(define ex20
+  (let ((m (solve-it
+            (= yes-triples3
+               (set ([s entities] [x atoms] [v literals]) 
+                    (and (triple s x v)
+                         (apply-predicate
+                          (lambda (x)
+                            (and (string? x)
+                                 ([choose < = >] (string-length x) v1)
+                                 ([choose < = >] (string-length x) v2)))
+                          v)))))))
+    ;(assert-max sintegers (litlen-max m))
+    (print-forms m)
+    (printeval m (list v1 v2))
+    (interpretation->relations (evaluate ib m) m)
+    ))
