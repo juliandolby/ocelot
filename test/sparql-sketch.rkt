@@ -515,7 +515,7 @@
                     (and (triple s x v) (apply-predicate (lambda (x) (boundedfilter x)) v)))))))
     ;(assert-max sintegers (litlen-max m))
     (print-forms m)
-    ;(printeval m sintegers)
+    (printeval m sintegers)
     (interpretation->relations (evaluate ib m) m)
     ))
 
