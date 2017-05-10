@@ -519,17 +519,47 @@
     (interpretation->relations (evaluate ib m) m)
     ))
 
+(define (andf x y) (and x y))
+
+(define (orf x y) (or x y))
+
+(define (bound x)
+  ([choose andf orf]
+   ([choose < = >] x (?? integer?))
+   ([choose < = >] x (?? integer?))))
+          
 (define ex20
   (let ((m (solve-it
             (= yes-triples3
                (set ([s entities] [x atoms] [v literals]) 
                     (and (triple s x v)
                          (apply-predicate
-                          (lambda (x)
-                            (and (string? x)
-                                 ([choose < = >] (string-length x) (?? integer?))
-                                 ([choose < = >] (string-length x) (?? integer?))))
+                          (lambda (x) (and (string? x) (bound (string-length x))))
                           v)))))))
+    (print-forms m)
+    (interpretation->relations (evaluate ib m) m)
+    ))
+
+(define ex21
+    (let* ((uri5-rel (hash-ref atom-relations 'uri5))
+           (m (solve-it
+               (= answer-triples
+                  (set ([s entities] [x uri5-rel] [v literals])
+                       (and (triple s x v) 
+                            (not (in (-> s x v) yes-triples3))))))))
+      (interpretation->relations (evaluate ib m) m)))
+
+(define ex22
+  (let* ((uri5-rel (hash-ref atom-relations 'uri5))
+         (m (solve-it
+             (= (set ([s entities] [x uri5-rel] [v literals])
+                     (and (triple s x v) 
+                          (not (in (-> s x v) yes-triples3))))
+                (set ([s entities] [x atoms] [v literals]) 
+                     (and (triple s x v)
+                          (apply-predicate
+                           (lambda (x) (and (string? x) (bound (string-length x))))
+                           v)))))))
     (print-forms m)
     (interpretation->relations (evaluate ib m) m)
     ))
