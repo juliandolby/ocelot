@@ -519,8 +519,6 @@
     (interpretation->relations (evaluate ib m) m)
     ))
 
-(define-symbolic v1 integer?)
-(define-symbolic v2 integer?)
 (define ex20
   (let ((m (solve-it
             (= yes-triples3
@@ -529,11 +527,9 @@
                          (apply-predicate
                           (lambda (x)
                             (and (string? x)
-                                 ([choose < = >] (string-length x) v1)
-                                 ([choose < = >] (string-length x) v2)))
+                                 ([choose < = >] (string-length x) (?? integer?))
+                                 ([choose < = >] (string-length x) (?? integer?))))
                           v)))))))
-    ;(assert-max sintegers (litlen-max m))
     (print-forms m)
-    (printeval m (list v1 v2))
     (interpretation->relations (evaluate ib m) m)
     ))
