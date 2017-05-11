@@ -75,10 +75,9 @@
 (define yes-triples4-bound
   (make-exact-bound
    yes-triples4
-   '((uri2 uri5 "Jon")
-     (uri1 uri5 "Rob")
-     ;(uri3 uri5 S1)
-     )))
+   (list
+    (list 'uri3 'uri5 S1)
+    (list 'uri4 'uri5 S2))))
 
 (define no-triples (declare-relation 3 "NoTriples"))
 
@@ -582,7 +581,7 @@
     (interpretation->relations (evaluate ib m) m)))
 
 
-(define (is-true-prefix x y) (and (not (equal? x y)) (is-string-prefix? y x)))
+(define (is-true-prefix x y) (and (not (equal? x y)) (string-prefix? y x)))
 
 ;and/or are considered to be binary currently
 (define-synthax (strfilter-it s1 s2 depth)
@@ -600,8 +599,25 @@
   (let ((m (solve-it
             (= yes-triples4
                (set ([s entities] [x atoms] [v1 literals]) 
-                    (some ([v2 literals]) (and (triple s x v2) (apply-predicate (lambda (x y) (boundedstrfilter x y)) v1 v2))
+                    (some ([v2 literals])
+                          (and (triple s x v2)
+                               (apply-predicate
+                                (lambda (x y)
+                                  (and (not (equal? x y)) (string-prefix? y x)))
+                                v2 v1))
                      ))))))
     (print-forms m)
+    (printeval m (list S1 S2))
+    (interpretation->relations (evaluate ib m) m)
+    ))
+
+(define ex25
+  (let ((m (solve-it
+            (= yes-triples4
+               (set ([s entities] [x atoms] [v1 literals]) 
+                    (some ([v2 literals]) (and (triple s x v2) (apply-predicate (lambda (x y) (boundedstrfilter x y)) v2 v1))
+                     ))))))
+    (print-forms m)
+    (printeval m (list S1 S2))
     (interpretation->relations (evaluate ib m) m)
     ))
