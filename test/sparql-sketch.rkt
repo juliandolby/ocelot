@@ -580,7 +580,6 @@
     (print-forms m)
     (interpretation->relations (evaluate ib m) m)))
 
-
 (define (is-true-prefix x y) (and (not (equal? x y)) (string-prefix? y x)))
 
 ;and/or are considered to be binary currently
@@ -608,8 +607,7 @@
                      ))))))
     (print-forms m)
     (printeval m (list S1 S2))
-    (interpretation->relations (evaluate ib m) m)
-    ))
+    (interpretation->relations (evaluate ib m) m)))
 
 (define ex25
   (let ((m (solve-it
@@ -619,5 +617,4 @@
                      ))))))
     (print-forms m)
     (printeval m (list S1 S2))
-    (interpretation->relations (evaluate ib m) m)
-    ))
+    (interpretation->relations (evaluate ib m) m)))
