@@ -563,3 +563,13 @@
     (print-forms m)
     (interpretation->relations (evaluate ib m) m)
     ))
+
+(define ex23
+  (let ((m
+         (solve-it
+          (= (set ([s entities] [v literals])
+                  (triple s 'uri5 v))
+             (set ([s entities] [v literals])
+                  [choose (triple s 'uri5 v) (triple s 'uri7 v)])))))
+    (print-forms m)
+    (interpretation->relations (evaluate ib m) m)))
