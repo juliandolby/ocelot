@@ -70,6 +70,16 @@
      (uri4 uri5 "Allison")
      (uri9 uri5 "Christa"))))
 
+(define yes-triples4 (declare-relation 3 "YesTriples4"))
+
+(define yes-triples4-bound
+  (make-exact-bound
+   yes-triples4
+   '((uri2 uri5 "Jon")
+     (uri1 uri5 "Rob")
+     ;(uri3 uri5 S1)
+     )))
+
 (define no-triples (declare-relation 3 "NoTriples"))
 
 (define no-triples-bound
@@ -106,7 +116,7 @@
 (define (is-atom? a)
   (hash-has-key? atom-relations a))
 
-(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound yes-triples3-bound no-triples-bound))))
+(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound yes-triples3-bound yes-triples4-bound no-triples-bound))))
 
 (define ib (instantiate-bounds limits))
 
@@ -151,9 +161,6 @@
 ;create simple numeric expression
 (define (numeric pred v)
   (and (string? v) (pred (string-length v))))
-
-(define (numeric1 pred i)
-  (apply-predicate (lambda (v) (pred v)) i))
 
 (define (strlen s)
   (apply-predicate (lambda (v) (if (string? v) (string-length v) -1)) s))
@@ -573,3 +580,28 @@
                   [choose (triple s 'uri5 v) (triple s 'uri7 v)])))))
     (print-forms m)
     (interpretation->relations (evaluate ib m) m)))
+
+
+(define (is-true-prefix x y) (and (not (equal? x y)) (is-string-prefix? y x)))
+
+;and/or are considered to be binary currently
+(define-synthax (strfilter-it s1 s2 depth)
+#:base ([choose is-true-prefix equal?] s1 s2)
+#:else (choose
+        ([choose is-true-prefix equal?] s1 s2)
+        (and (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))
+        (or (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))))
+
+
+(define (boundedstrfilter s1 s2)
+  (strfilter-it s1 s2 1))
+
+(define ex24
+  (let ((m (solve-it
+            (= yes-triples4
+               (set ([s entities] [x atoms] [v1 literals]) 
+                    (some ([v2 literals]) (and (triple s x v2) (apply-predicate (lambda (x y) (boundedstrfilter x y)) v1 v2))
+                     ))))))
+    (print-forms m)
+    (interpretation->relations (evaluate ib m) m)
+    ))
