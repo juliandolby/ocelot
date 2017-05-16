@@ -635,3 +635,15 @@
     (interpretation->relations (evaluate ib m) m)))
 
 
+(define ex27
+  (let* ((uri5-rel (hash-ref atom-relations 'uri5))
+         (m (solve-it
+             (= (set ([s entities] [x uri5-rel] [v literals])
+                     (and (triple s x v) 
+                          (not (in (-> s x v) yes-triples3))))
+                (set ([s entities] [x atoms] [v1 literals]) 
+                     (joins s x v1 2))))))
+    (print-forms m)
+    (interpretation->relations (evaluate ib m) m)))
+
+
