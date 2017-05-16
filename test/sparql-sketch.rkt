@@ -618,3 +618,20 @@
     (print-forms m)
     (printeval m (list S1 S2))
     (interpretation->relations (evaluate ib m) m)))
+
+(define-synthax (joins s p v depth)
+  #:base (triple [choose s p v] [choose s p v] [choose s p v])
+  #:else (choose
+          (and (joins s p v (- depth 1)) (joins s p v (- depth 1)))
+          (and (joins s p v (- depth 1))
+               (apply-predicate (lambda (x) (and (string? x) (bound (string-length x)))) [choose s p v]))))
+
+(define ex26
+  (let ((m (solve-it
+            (= yes-triples3
+               (set ([s entities] [x atoms] [v1 literals]) 
+                    (joins s x v1 2))))))
+    (print-forms m)
+    (interpretation->relations (evaluate ib m) m)))
+
+
