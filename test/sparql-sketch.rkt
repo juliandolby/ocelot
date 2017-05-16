@@ -622,6 +622,7 @@
 (define-synthax (joins s p v depth)
   #:base (triple [choose s p v] [choose s p v] [choose s p v])
   #:else (choose
+          (joins s p v (- depth 1))
           (and (joins s p v (- depth 1)) (joins s p v (- depth 1)))
           (and (joins s p v (- depth 1))
                (apply-predicate (lambda (x) (and (string? x) (bound (string-length x)))) [choose s p v]))))
