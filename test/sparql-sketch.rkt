@@ -623,7 +623,8 @@
   #:base (triple [choose s p v] [choose s p v] [choose s p v])
   #:else (choose
           (triple [choose s p v] [choose s p v] [choose s p v])
-          (and (joins s p v (- depth 1)) (joins s p v (- depth 1)))
+          (and (joins s p v (- depth 1))
+               (triple [choose s p v] [choose s p v] [choose s p v]))
           (and (joins s p v (- depth 1))
                (apply-predicate (lambda (x) (and (string? x) (bound (string-length x)))) [choose s p v]))))
 
@@ -647,4 +648,26 @@
     (print-forms m)
     (interpretation->relations (evaluate ib m) m)))
 
+(define-synthax (simple-stuff s p v depth)
+  #:base (triple [choose s p v] [choose s p v] [choose s p v])
+  #:else (choose
+          (triple [choose s p v] [choose s p v] [choose s p v])
+          (and (simple-stuff s p v (- depth 1)) 
+               (apply-predicate (lambda (x y) (boundedstrfilter x y)) [choose s p v] [choose s p v]))
+          (and (simple-stuff s p v (- depth 1))
+               (triple [choose s p v] [choose s p v] [choose s p v]))))
 
+(define (stuff s p v)
+  (choose
+   (simple-stuff s p v 1)
+   (some ([x atoms])
+         (simple-stuff [choose s x] [choose p x] [choose v x] 1))))
+
+(define ex28
+  (let ((m (solve-it
+            (= yes-triples4
+               (set ([s entities] [p atoms] [v literals]) 
+                    (stuff s p v))))))
+    (print-forms m)
+    (printeval m (list S1 S2))
+    (interpretation->relations (evaluate ib m) m)))
