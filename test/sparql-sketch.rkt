@@ -22,70 +22,83 @@
 (define triples (declare-relation 3 "Triples"))
 
 (define triples-bound
-  (make-exact-bound
-   triples
-   '((uri1 uri5 "Robert")
-     (uri2 uri5 "Jonathon")
-     (uri3 uri5 "Paula")
-     (uri4 uri5 "Allison")
-     (uri8 uri5 "Christian")
-     (uri9 uri5 "Christa")
-     (uri6 uri7 uri1)
-     (uri6 uri7 uri3)
-     (uri6 uri7 uri8))))
+(make-exact-bound
+ triples
+ '((uri1 uri5 "Robert")
+   (uri2 uri5 "Jonathon")
+   (uri3 uri5 "Paula")
+   (uri4 uri5 "Allison")
+   (uri8 uri5 "Christian")
+   (uri9 uri5 "Christa")
+   (uri6 uri7 uri1)
+   (uri6 uri7 uri3)
+   (uri6 uri7 uri8))))
 
 (define yes-triples (declare-relation 3 "YesTriples"))
 
 (define yes-triples-bound
-  (make-exact-bound
-   yes-triples
-   '((uri1 uri5 "Robert")
-     (uri3 uri5 "Paula"))))
+(make-exact-bound
+ yes-triples
+ '((uri1 uri5 "Robert")
+   (uri3 uri5 "Paula"))))
 
 (define yes-triples1 (declare-relation 3 "YesTriples1"))
 
 (define yes-triples1-bound
-  (make-exact-bound
-   yes-triples1
-   '((uri1 uri5 "Robert")
-     (uri3 uri5 "Paula")
-     (uri8 uri5 "Christian"))))
+(make-exact-bound
+ yes-triples1
+ '((uri1 uri5 "Robert")
+   (uri3 uri5 "Paula")
+   (uri8 uri5 "Christian"))))
 
 (define yes-triples2 (declare-relation 3 "YesTriples2"))
 
 (define yes-triples2-bound
-  (make-exact-bound
-   yes-triples2
-   '((uri1 uri5 "Robert")
-     (uri3 uri5 "Paula")
-     (uri8 uri5 "Christian")
-     (uri8 uri5 "Christa"))))
+(make-exact-bound
+ yes-triples2
+ '((uri1 uri5 "Robert")
+   (uri3 uri5 "Paula")
+   (uri8 uri5 "Christian")
+   (uri8 uri5 "Christa"))))
 
 (define yes-triples3 (declare-relation 3 "YesTriples3"))
 
 (define yes-triples3-bound
-  (make-exact-bound
-   yes-triples3
-   '((uri2 uri5 "Jonathon")
-     (uri4 uri5 "Allison")
-     (uri9 uri5 "Christa"))))
+(make-exact-bound
+ yes-triples3
+ '((uri2 uri5 "Jonathon")
+   (uri4 uri5 "Allison")
+   (uri9 uri5 "Christa"))))
 
 (define yes-triples4 (declare-relation 3 "YesTriples4"))
 
 (define yes-triples4-bound
-  (make-exact-bound
-   yes-triples4
-   (list
-    (list 'uri3 'uri5 S1)
-    (list 'uri4 'uri5 S2))))
+(make-exact-bound
+ yes-triples4
+ (list
+  (list 'uri3 'uri5 S1)
+  (list 'uri4 'uri5 S2))))
+
+(define yes-triples5 (declare-relation 3 "YesTriples5"))
+
+(define yes-triples5-bound
+(make-exact-bound
+ yes-triples5
+ '((uri1 uri6 "Robert")
+   (uri2 Null "Jonathon")
+   (uri3 uri6 "Paula")
+   (uri4 Null "Allison")
+   (uri8 uri6 "Christian")
+   (uri9 Null "Christa"))))
+
 
 (define no-triples (declare-relation 3 "NoTriples"))
 
 (define no-triples-bound
-  (make-exact-bound
-   no-triples
-   '((uri2 uri5 "Jonathon")
-     (uri3 uri5 "Allison"))))
+(make-exact-bound
+ no-triples
+ '((uri2 uri5 "Jonathon")
+   (uri3 uri5 "Allison"))))
 
 
 (define entities (declare-relation 1 "URIs"))
@@ -113,35 +126,35 @@
 (define atom-bounds (hash-map atom-relations (lambda (k v) (make-exact-bound v (list (list k))))))
 
 (define (is-atom? a)
-  (hash-has-key? atom-relations a))
+(hash-has-key? atom-relations a))
 
-(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound yes-triples3-bound yes-triples4-bound no-triples-bound))))
+(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-triples-bound yes-triples1-bound yes-triples2-bound yes-triples3-bound yes-triples4-bound yes-triples5-bound no-triples-bound))))
 
 (define ib (instantiate-bounds limits))
 
 (define (solve-it x)
-  (time
-   (begin
-     (solver-clear (current-solver))
-     (solver-assert (current-solver) (list (interpret* x ib)))
-     (solver-check (current-solver)))))
+(time
+ (begin
+   (solver-clear (current-solver))
+   (solver-assert (current-solver) (list (interpret* x ib)))
+   (solver-check (current-solver)))))
 
 ;;
 
 (define (triple s p v)
-  (if (or (is-atom? s) (eq? s _))
-      (let ((rel (if (eq? s _) entities (hash-ref atom-relations s))))
-        (some ([x rel])
-              (triple x p v)))
-      (if (or (is-atom? p) (eq? p _))
-          (let ((rel (if (eq? p _) entities (hash-ref atom-relations p))))
-            (some ([x rel])
-                  (triple s x v)))
-          (if (or (is-atom? v) (eq? v _))
-              (let ((rel (if (eq? v _) atoms (hash-ref atom-relations v))))
-                (some ([x rel])
-                      (triple s p x)))
-              (in (-> s p v) triples)))))
+(if (or (is-atom? s) (eq? s _))
+    (let ((rel (if (eq? s _) entities (hash-ref atom-relations s))))
+      (some ([x rel])
+            (triple x p v)))
+    (if (or (is-atom? p) (eq? p _))
+        (let ((rel (if (eq? p _) entities (hash-ref atom-relations p))))
+          (some ([x rel])
+                (triple s x v)))
+        (if (or (is-atom? v) (eq? v _))
+            (let ((rel (if (eq? v _) atoms (hash-ref atom-relations v))))
+              (some ([x rel])
+                    (triple s p x)))
+            (in (-> s p v) triples)))))
 
 ;;
 
@@ -159,15 +172,15 @@
 
 ;create simple numeric expression
 (define (numeric pred v)
-  (and (string? v) (pred (string-length v))))
+(and (string? v) (pred (string-length v))))
 
 (define (strlen s)
-  (apply-predicate (lambda (v) (if (string? v) (string-length v) -1)) s))
+(apply-predicate (lambda (v) (if (string? v) (string-length v) -1)) s))
 
 (define (assert-max svalues max) (map (lambda (i) (assert (<= i (+ max 1)))) svalues))
 
 (define (litlen-max model) (apply max (map (lambda (t) (string-length (car t)))
-                                    (hash-ref (interpretation->relations (evaluate ib model) model) literals))))
+                                  (hash-ref (interpretation->relations (evaluate ib model) model) literals))))
 
 (define (printeval model svalues) (println (map (lambda (i) (evaluate i model)) svalues)))
 
@@ -530,10 +543,10 @@
 (define (orf x y) (or x y))
 
 (define (bound x)
-  ([choose andf orf]
-   ([choose < = >] x (?? integer?))
-   ([choose < = >] x (?? integer?))))
-          
+([choose andf orf]
+ ([choose < = >] x (?? integer?))
+ ([choose < = >] x (?? integer?))))
+
 (define ex20
   (let ((m (solve-it
             (= yes-triples3
@@ -586,13 +599,13 @@
 (define-synthax (strfilter-it s1 s2 depth)
 #:base ([choose is-true-prefix equal?] s1 s2)
 #:else (choose
-        ([choose is-true-prefix equal?] s1 s2)
-        (and (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))
-        (or (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))))
+      ([choose is-true-prefix equal?] s1 s2)
+      (and (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))
+      (or (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))))
 
 
 (define (boundedstrfilter s1 s2)
-  (strfilter-it s1 s2 1))
+(strfilter-it s1 s2 1))
 
 (define ex24
   (let ((m (solve-it
@@ -619,13 +632,32 @@
     (printeval m (list S1 S2))
     (interpretation->relations (evaluate ib m) m)))
 
+
+
+(define-symbolic* l string?)
+(assert (member l all-atoms))
+
+;(define (choose-atom s p v)
+;  ([choose* s p v l 'uri1 'uri2 'uri3 'uri4 'uri5 'uri6 'uri7 'uri8 'uri9]))
+
+(define-syntax optional2
+(syntax-rules ()
+  ((_ (v1 ...) x)
+   (let* ((null-rel (hash-ref atom-relations 'Null)))
+      (or x
+              (and 
+               (and (in v1 null-rel) ...)
+               (no  [(v1 atoms) ...]
+                   x)))))))
+
+
 (define-synthax (joins s p v depth)
-  #:base (triple [choose s p v] [choose s p v] [choose s p v])
-  #:else (choose
-          (triple [choose s p v] [choose s p v] [choose s p v])
-          (and (joins s p v (- depth 1)) (joins s p v (- depth 1)))
-          (and (joins s p v (- depth 1))
-               (apply-predicate (lambda (x) (and (string? x) (bound (string-length x)))) [choose s p v]))))
+#:base (triple [choose s p v (?? string?)] [choose 'uri5 s p v (?? string?)] [choose s p v l])
+#:else (choose
+        (triple [choose s p v (?? string?)] [choose 'uri5 s p v (?? string?)] [choose s p v l])
+        (and (joins s p v (- depth 1)) (joins s p v (- depth 1)))
+        (and (joins s p v (- depth 1))
+             (apply-predicate (lambda (x) (and (string? x) (bound (string-length x)))) [choose s p v]))))
 
 (define ex26
   (let ((m (solve-it
@@ -648,3 +680,11 @@
     (interpretation->relations (evaluate ib m) m)))
 
 
+(define ex28
+(let ((m (solve-it
+          (= yes-triples5
+             (set ([s entities] [x atoms] [v1 literals]) 
+                  (and (triple s 'uri5 v1) ; (joins s x v1 1) 
+                       (optional2  (x) (triple x 'uri7 s))))))))
+  (print-forms m)
+  (interpretation->relations (evaluate ib m) m)))
