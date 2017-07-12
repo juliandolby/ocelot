@@ -18,17 +18,10 @@
 
 (define U (universe all-atoms))
 
-(define data-01 (declare-relation 3 "data-01"))
-
-(define data-01-bound
-(make-exact-bound
- data-01
- '((x p v1)
-   (x p v2))))
 
 (define triples (declare-relation 3 "triples"))
 (define triples-bound
-  (make-exact-bound triples ;= data-01-bound, currently data-01-bound is not used 
+  (make-exact-bound triples ;= data-01
  '((x p v1)
    (x p v2))))
 
@@ -89,7 +82,6 @@
 
 (define limits (bounds U (append atom-bounds (list subjects-bound properties-bound objects-bound entities-bound ;no-triples-bound
                                               atoms-bound triples-bound
-                                              data-01-bound
                                               result-tp-01-bound result-tp-02-bound))))
 
 (define ib (instantiate-bounds limits))
@@ -125,15 +117,15 @@
 
 (define (triple s p v)
 (if (or (is-atom? s) (eq? s _))
-    (let ((rel (if (eq? s _) entities (hash-ref atom-relations s))))
+    (let ((rel (if (eq? s _) subjects (hash-ref atom-relations s))))
       (some ([x rel])
             (triple x p v)))
     (if (or (is-atom? p) (eq? p _))
-        (let ((rel (if (eq? p _) entities (hash-ref atom-relations p))))
+        (let ((rel (if (eq? p _) properties (hash-ref atom-relations p))))
           (some ([x rel])
                 (triple s x v)))
         (if (or (is-atom? v) (eq? v _))
-            (let ((rel (if (eq? v _) atoms (hash-ref atom-relations v))))
+            (let ((rel (if (eq? v _) objects (hash-ref atom-relations v))))
               (some ([x rel])
                     (triple s p x)))
             (in (-> s p v) triples)))))
