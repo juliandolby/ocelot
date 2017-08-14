@@ -681,7 +681,25 @@
            
 (test (ex31 m)
       (all ([n (join entities yes-pairs3)])
-           (and (apply-predicate (lambda (s) (string-suffix? s " A.")) n)
-                (some ([nn literals])
-                      (apply-predicate is-true-prefix nn n))))
+           (some ([nn literals])
+                 (apply-predicate (lambda (x y) (and (is-true-prefix x y) (string-suffix? y " A."))) nn n)))
       (printeval m (list S1 S2)))
+
+(define-synthax (joins4 s v depth)
+  #:base (triple s _ v)
+  #:else
+  (choose (triple s _ v)
+          (some ([x atoms])
+                (and
+                 (joins4 s x (- depth 1))
+                 (joins4 x v (- depth 1))))
+          (some ([x atoms])
+                (optional (s)
+                 (joins4 x v (- depth 1))
+                 (joins4 s x (- depth 1))))))
+
+(test (ex32 m)
+      (= yes-pairs2
+         (set ([s atoms] [v literals])
+              (joins4 s v 2)))
+      (print-forms m))

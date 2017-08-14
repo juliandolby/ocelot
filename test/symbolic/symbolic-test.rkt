@@ -1,7 +1,7 @@
-#lang s-exp rosette
+#lang rosette
 
-(require "../ocelot.rkt" "util.rkt"
-         rosette/lib/angelic
+(require ocelot "../util.rkt"
+         rosette/lib/angelic rosette/lib/synthax
          rackunit rackunit/text-ui)
 
 (define U (universe '(a b c d)))
@@ -15,7 +15,7 @@
   (define (rec bnd)
     (if (<= bnd 0)
         (apply choose* terminals)
-        (begin
+        (let ()
           (define e0 (rec (sub1 bnd)))
           (define e1 (rec (sub1 bnd)))
           (define-symbolic* xi boolean? [(length ops)])
@@ -60,13 +60,35 @@
   (test-formula-solve U (= Y B1) [(A1 '((a))) (B1 '((b)))] #t)
   )
 
+(define (test-sketch-under-comprehension)
+  (define E1 (set ([a A1]) (choose (in a B1) (in a C1))))
+
+  (test-formula-solve U (= E1 A1) [(A1 '((a) (b))) (B1 '()) (C1 '((a) (b)))] #t)
+  (test-formula-solve U (= E1 A1) [(A1 '((a) (b))) (B1 '()) (C1 '((a)))] #f)
+  (test-formula-solve U (= E1 A1) [(A1 '((a) (b))) (B1 '((a) (b))) (C1 '((a) (b)))] #t)
+  (test-formula-solve U (= E1 A1) [(A1 '((a))) (B1 '((a) (b))) (C1 '((a)))] #t)
+  )
+
+(define (test-eval)
+  ; Ocelot depends on equality being preserved across evaluate; if this doesn't
+  ; hold, then evaluation can be messed up
+  (define-symbolic p boolean?)
+
+  (define F (if p A1 B1))
+  (define model (solve (assert p)))
+  (check-true (equal? (evaluate F model) A1))
+  )
+
+
 (define solve-tests
   (test-suite
    "solve tests"
    #:before (thunk (printf "----- solve tests -----\n"))
    (test-+)
    (test-combo)
-   (test-caching)))
+   (test-caching)
+   (test-sketch-under-comprehension)
+   (test-eval)))
 
 (module+ test
   (time (run-tests solve-tests)))

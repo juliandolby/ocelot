@@ -1,26 +1,43 @@
 #lang scribble/manual
 
-@require[scribble/eval @for-label[ocelot (only-in rosette term?)]]
+@require[racket/runtime-path racket/require racket/sandbox scribble/eval
+         "log.rkt"
+         @for-label[ocelot
+                   (only-in rosette term? solve)
+                   (only-in rosette/base/core/safe assert)]]
 
-@(define my-eval (make-base-eval #:lang 'racket))
-@(my-eval `(require rosette ocelot))
+@(define-runtime-path root ".")
+@(define my-eval (make-log-evaluator (logfile root) 'rosette))
+@(my-eval `(require ocelot))
 
 @title{Ocelot: a solver for relational logic}
 @author[(author+email "James Bornholt" "bornholt@cs.washington.edu")]
 
 @defmodule[ocelot]
 
-Ocelot provides an embedding of relational logic in 
+Ocelot provides an embedding of bounded relational logic in 
 @link["https://emina.github.io/rosette"]{Rosette},
 a solver-aided programming language.
 Ocelot enables both @(seclink "check" "verification")
 and @(seclink "sketch" "synthesis") of relational logic expressions.
 
+Ocelot's flavor of bounded relational logic draws heavily on
+@link["http://alloy.mit.edu/"]{Alloy},
+so many concepts and examples from Alloy will also help
+in developing Ocelot programs.
+
 @section{Quick Start}
+
+Ocelot is best used with @link["https://emina.github.io/rosette"]{Rosette},
+so your file should begin:
+
+@codeblock|{
+  #lang rosette
+}|
 
 Using Ocelot involves first @seclink["spec"]{constructing a relational specification},
 then @seclink["scope"]{defining a scope} in which to check the specification,
-and finally @seclink["check"]{checking properties within that scope}.
+and finally @seclink["check"]{checking properties} within that scope.
 
 @subsection[#:tag "spec"]{Constructing relational specifications}
 
@@ -105,9 +122,11 @@ while verifying the constraints with @racket[verify] is similar to Alloy's @tt{c
   (sat? result2)
   ]
 
+@;{
 @subsection[#:tag "sketch"]{Synthesizing Relational Expressions}
 
 TODO
+}
 
 @section{Reference}
 
@@ -142,7 +161,7 @@ context will not also be manipulating Rosette expressions.
 @defproc[(- [a node/expr?] [b node/expr?] ...) node/expr?]{
  Produces the first relation, but without any tuples present in the remaining relations (i.e., set difference).
  
- @racket[(- a b c)] is equivalent to @racket[((- a b) c)].}
+ @racket[(- a b c)] is equivalent to @racket[(- (- a b) c)].}
 
 @defproc[(-> [a node/expr?] [b node/expr?] ...) node/expr?]{
   Produces the cross product of two or more relations.}
@@ -405,14 +424,28 @@ back to the relations that defined the solved formula.
   (define bCats (make-upper-bound cats '((a) (b) (c) (d))))
   (define allCatBounds (bounds U (list bCats)))
   (define iCats (instantiate-bounds allCatBounds))
-  iCats
+
   (code:comment @#,elem{Find an interesting model for the cats relation})
   (define F (and (some cats) (some (- univ cats))))
   (define resultCats (solve (assert (interpret* F iCats))))
   (sat? resultCats)
+
   (code:comment @#,elem{Lift the model to lists of tuples for each relation})
   (define catsModel (interpretation->relations (evaluate iCats resultCats)))
   (hash-ref catsModel cats)
   ]
 
+@subsection[#:tag "sketch"]{Sketching and Synthesis}
+
+@defproc[(expression-sketch [depth natural-number/c]
+                            [arity natural-number/c]
+                            [operators (listof procedure?)]
+                            [terminals (listof node/expr?)]) node/expr?]{
+  Constructs an expression sketch, which is an unknown relational expression.
+  Possible completions of the expression sketch are all relational expressions
+  of arity @racket[arity] whose AST is @racket[depth] levels deep,
+  with leaf nodes drawn from @racket[terminals]
+  and non-leaf nodes drawn from @racket[operators].
+}
   
+@(kill-evaluator my-eval)
