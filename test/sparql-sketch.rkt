@@ -297,3 +297,20 @@
           (Null "Allison")
           (Null "Christian")
           (Null "Christa")))))
+
+(test (ex6 model)
+      (= answers
+         (set ([x entity-or-null] [v literals])
+	      (some ([s entities])
+                    (filter (v)
+                      (optional (x)
+                        (triple s 'uri5 v)
+                        (triple x 'uri7 s))
+                      (< (string-length v) 8)))))
+      (assert
+       (equal?
+        (get-answers answers model)
+        '((uri6 "Robert")
+          (uri6 "Paula")
+          (Null "Allison")
+          (Null "Christa")))))
