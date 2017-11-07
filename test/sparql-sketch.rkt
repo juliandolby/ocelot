@@ -278,4 +278,22 @@
 	            (optional (x)
                       (triple s 'uri5 v)
                       (triple x 'uri7 s))))))
-	       
+
+(test (ex5 model)
+      (= answers
+         (set ([x entity-or-null] [v literals])
+	      (some ([s entities])
+	            (optional (x)
+                      (triple s 'uri5 v)
+                      (filter (v)
+                        (triple x 'uri7 s)
+                        (< (string-length v) 8))))))
+      (assert
+       (equal?
+        (get-answers answers model)
+        '((uri6 "Robert")
+          (uri6 "Paula")
+          (Null "Jonathon")
+          (Null "Allison")
+          (Null "Christian")
+          (Null "Christa")))))
