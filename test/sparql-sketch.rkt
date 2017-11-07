@@ -11,7 +11,7 @@
 
 (define values (append '("Rob" "Robert" "Jon" "Jonathon" "Paula" "Allison" "Christian" "Christa") (list S1 S2)))
 
-(define all-atoms (append uris values (list 'Null)))
+(define all-atoms (append uris values (list 'Null #t #f)))
 
 (require ocelot)
 (require rosette/lib/synthax)
@@ -135,9 +135,17 @@
 
 (define entities-bound (make-exact-bound entities (map list uris)))
 
+(define entity-or-null (declare-relation 1 "Null+URIs"))
+
+(define entity-or-null-bound (make-exact-bound entity-or-null (cons (list 'Null) (map list uris))))
+
 (define literals (declare-relation 1 "Literals"))
 
 (define literals-bound (make-exact-bound literals (map list values)))
+
+(define booleans (declare-relation 1 "Booleans"))
+
+(define booleans-bound (make-exact-bound booleans (list (list #t) (list #f))))
 
 (define atoms (declare-relation 1 "Atoms"))
 
@@ -145,7 +153,7 @@
 
 (define answers (declare-relation 2 "AnswerPairs"))
 
-(define answers-bound (make-product-bound answers uris all-atoms))
+(define answers-bound (make-product-bound answers (cons 'Null uris) all-atoms))
 
 (define answer-triples (declare-relation 3 "AnswerTriples"))
 
@@ -158,7 +166,7 @@
 (define (is-atom? a)
 (hash-has-key? atom-relations a))
 
-(define limits (bounds U (append atom-bounds (list literals-bound entities-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-pairs-bound yes-pairs2-bound yes-pairs3-bound yes-triples-bound yes-triples1-bound yes-triples2-bound yes-triples3-bound yes-triples4-bound yes-triples5-bound no-triples-bound))))
+(define limits (bounds U (append atom-bounds (list booleans-bound literals-bound entities-bound entity-or-null-bound answers-bound answer-triples-bound atoms-bound triples-bound yes-pairs-bound yes-pairs2-bound yes-pairs3-bound yes-triples-bound yes-triples1-bound yes-triples2-bound yes-triples3-bound yes-triples4-bound yes-triples5-bound no-triples-bound))))
 
 (define ib (instantiate-bounds limits))
 
@@ -173,47 +181,42 @@
 ;;
 
 (define (triple s p v)
-(if (or (is-atom? s) (eq? s _))
-    (let ((rel (if (eq? s _) entities (hash-ref atom-relations s))))
-      (some ([x rel])
-            (triple x p v)))
-    (if (or (is-atom? p) (eq? p _))
-        (let ((rel (if (eq? p _) entities (hash-ref atom-relations p))))
-          (some ([x rel])
-                (triple s x v)))
-        (if (or (is-atom? v) (eq? v _))
-            (let ((rel (if (eq? v _) atoms (hash-ref atom-relations v))))
-              (some ([x rel])
-                    (triple s p x)))
-            (in (-> s p v) triples)))))
+  (if (or (is-atom? s) (eq? s _))
+      (let ((rel (if (eq? s _) entities (hash-ref atom-relations s))))
+        (some ([x rel])
+              (triple x p v)))
+      (if (or (is-atom? p) (eq? p _))
+          (let ((rel (if (eq? p _) entities (hash-ref atom-relations p))))
+            (some ([x rel])
+                  (triple s x v)))
+          (if (or (is-atom? v) (eq? v _))
+              (let ((rel (if (eq? v _) atoms (hash-ref atom-relations v))))
+                (some ([x rel])
+                      (triple s p x)))
+              (in (-> s p v) triples)))))
 
-;;
+(define-syntax optional
+  (syntax-rules ()
+    ((_ (v1 ...) x y)
+     (let* ((null-rel (hash-ref atom-relations 'Null)))
+        (and x
+            (or y
+                (and 
+                 (and (in v1 null-rel) ...)
+                 (no [(v1 atoms) ...]
+                     y))))))))
 
-(define-symbolic* i1 i2 i3 i4 i5 i6 i7 integer?)
+(define-syntax filter
+  (syntax-rules ()
+    ((_ (v1 ...) x y)
+     (and x (apply-predicate (lambda (v1 ...) y) v1 ...)))))
 
-(define sintegers (list i1 i2 i3 i4 i5 i6 i7))
-
-; comparison operators
-(define (comp-eq i) (= i i2))
-(define (comp-le i) (<= i i3))
-(define (comp-l i) (< i i4))
-(define (comp-ge i) (>= i i5))
-(define (comp-g i) (> i i6))
-(define (comp-uneq i) (not (= i i7)))
-
-;create simple numeric expression
-(define (numeric pred v)
-(and (string? v) (pred (string-length v))))
-
-(define (strlen s)
-(apply-predicate (lambda (v) (if (string? v) (string-length v) -1)) s))
-
-(define (assert-max svalues max) (map (lambda (i) (assert (<= i (+ max 1)))) svalues))
-
-(define (litlen-max model) (apply max (map (lambda (t) (string-length (car t)))
-                                  (hash-ref (interpretation->relations (evaluate ib model) model) literals))))
-
-(define (printeval model svalues) (println (map (lambda (i) (evaluate i model)) svalues)))
+(define-syntax union
+  (syntax-rules ()
+    ((_ x y)
+     (some ([b booleans])
+           (or (filter (b) x b)
+               (filter (b) y (not b)))))))
 
 ;;
 
@@ -230,476 +233,49 @@
           ...
           (interpretation->relations (evaluate ib model-name) model-name)))))))
 
+(define (get-answers rel model)
+  (hash-ref (interpretation->relations (evaluate ib model) model) rel))
+
 ;;
 
 (test (ex1 model)
-      (and
-       (all ([s (join answers literals)])
-            (some (join s (join triples literals))))
-       (all ([s (join (join triples literals) entities)])
-            (and
-             (one (join s answers))
-             (all ([v (join atoms (join s triples))])
-                  (in v (join s answers)))))))
+      (= answers
+         (set ([p entities] [v literals])
+              (triple 'uri1 p v)))
+      (assert
+       (equal?
+        (get-answers answers model)
+        '((uri5 "Robert")))))
 
 (test (ex2 model)
-      (and
-       (all ([s (join answers literals)])
-            (some (join s (join triples literals))))
-       (all ([s (join (join triples literals) entities)])
-            (and
-             (one (join s answers))
-             (all ([v (join entities (join s triples))])
-                  (is-string-prefix? (join s answers) v))))))
+      (= answers
+         (set ([p entities] [v literals])
+              (union
+               (triple 'uri1 p v)
+               (triple 'uri3 p v))))
+      (assert
+       (equal?
+        (get-answers answers model)
+        '((uri5 "Robert") (uri5 "Paula")))))
 
 (test (ex3 model)
-      (and
-       (some answers)
-       (=
-        answers
-        (set ([s entities] [nn literals])
-             (some ([p entities] [n literals])
-                   (and (apply-predicate
-                         (lambda (x y)
-                           (and (string? x)
-                                (string? y)
-                                (> (string-length y) 0)
-                                (> (string-length x) (string-length y))
-                                (string-prefix? x y)))
-                         n nn)
-                        (in (-> s p n) triples)))))))
-
-(test (ex4 m)
-      (=
-       answers
-       (set ([s entities] [nn literals])
-            (some ([p entities] [n literals])
-                  (and (is-string-prefix? nn n)
-                       (in (-> s p n) triples))))))
-
-(test (ex5 m)
       (= answers
-         (set ([s entities] [v literals])
-              (some ([t entities])
-                    (and
-                     (some ([p1 entities])
-                           (in (-> s p1 t) triples))
-                     (some ([p2 entities])
-                           (in (-> t p2 v) triples)))))))
+         (set ([p entities] [v literals])
+              (filter (v)
+               (union
+                (triple 'uri1 p v)
+                (triple 'uri3 p v))
+               (< (string-length v) 6))))
+      (assert
+       (equal?
+        (get-answers answers model)
+        '((uri5 "Paula")))))
 
-(test (ex6 m)
-      (= answers
-         (set ([s entities] [v literals])
-              (and
-               (some ([p entities])
-                     (triple s p v))
-               (apply-predicate
-                (lambda (s)
-                  (and (string? s)
-                       (< (string-length s) 7)))
-                v)))))
-
-(test (ex7 m)
-      (= answers
-         (set ([s entities] [v literals])
-              (triple s 'uri5 v))))
-
-(test (ex8 m)       
-      (= answers
-         (set ([s entities] [v literals])
-              (and
-               (triple _ _ s)
-               (triple s 'uri5 v)))))
-
-(test (ex9 m)
-      (= answers
-         (set ([s entities] [v literals])
-              (and
-               (apply-predicate
-                (lambda (s)
-                  (and (string? s) (> (string-length s) 6)))
-                v)
-               (triple s 'uri5 v)))))
-
-
-
-
-(define (iop i) (and ([choose > = <] i i1) (< 0 i1)))
-
-
-
-(test (ex10 m) 
-      (and
-       (= answers (set ([s entities] [v literals])
-                       (and (apply-predicate (lambda (ss) (and (string? ss) (iop (string-length ss)))) v)
-                            (triple s 'uri5 v))))
-       
-       (all ([s (join (join yes-triples literals) entities)])
-            (and (some (join s answers))
-                 (all ([v (join atoms (join s yes-triples))]) (in v (join s answers)))))
-       
-       (all ([s (join (join no-triples literals) entities)])
-            (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
-       )
-      (assert (<= i1 (apply max (map (lambda (t) (string-length (car t)))
-                                     (hash-ref (interpretation->relations (evaluate ib m) m) literals)))))
-      (print-forms m)
-      (println (evaluate i1 m)))
-
-
-(define (strlen-comp s) (and (string? s) ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s))))
-
-(define (strlen-comp-union s) (and (string? s)
-                                   (or ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s))
-                                   ([choose comp-eq comp-le comp-l comp-ge comp-g] (string-length s)))))
-
-(test (ex11 m) 
-      (and
-       (= answers (set ([s entities] [v literals])
-                       (and (apply-predicate (lambda (vv) ([choose strlen-comp strlen-comp-union] vv)) v)
-                            (some ([p entities]) (triple s p v)))
-                       ))
-       
-       (all ([s (join (join yes-triples literals) entities)])
-            (and (some (join s answers))
-                 (all ([v (join atoms (join s yes-triples))]) (in v (join s answers)))))
-       
-       (all ([s (join (join no-triples literals) entities)])
-            (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
-       )
-
-      (map (lambda (i) (assert (<= i (+ (litlen-max m) 1))))  (list i2 i3 i4 i5 i6))
-
-      (print-forms m)
-      (println (evaluate i3 m))
-      (println (evaluate i4 m)))
-
-
-(test (ex12 m)
-      (= answers
-         (set ([s entities] [v literals])
-              (and
-               (apply-predicate
-                (lambda (s)
-                  (and (string? s) (> (string-length s) 6)))
-                v)
-               (triple s 'uri5 v)
-               (not (in (-> s v)
-                        (set ([s1 entities] [v1 literals])
-                             (and
-                              (apply-predicate
-                               (lambda (s)
-                                 (and (string? s) (> (string-length s) 7)))
-                               v1)
-                              (triple s1 'uri5 v1)))))))))
-
-(test (ex13 m)
-      (and
-       (some ([v2 (join entities answers)])
-             (apply-predicate
-              (lambda (v) (equal? v "AllisonOne"))
-              v2))
-       (some ([v2 (join entities answers)])
-             (apply-predicate
-              (lambda (v) (equal? v "PaulaOne"))
-              v2))
-       (= answers
-          (set ([s entities] [v literals])
-               (some
-                (set ([v1 literals])
-                     (and
-                      (triple s 'uri5 v1)
-                      (apply-predicate
-                       (lambda (a b)
-                         (and (string-prefix? a b)
-                              (not (equal? a b))))
-                       v v1))))))))
-
-(define-syntax ppx
-  (syntax-rules ()
-    ((_ (pred) from to)
-     (triple from pred to))
-    ((_ (pred1 pred2 ...) from to)
-     (let ((s (gensym)))
-       (some ([s entities])
-	     (and
-	      (triple from pred1 s)
-	      (ppx (pred2 ...) s to)))))))
-
-
-(test (ex14 m)
-      (= answers
-         (set ([s entities] [v literals])
-              (ppx (_ _) s v))))
-
-(test (ex15 m) 
-      (and
-       (= answers (set ([s entities] [v literals])
-                       (and (apply-predicate (lambda (vv) ([choose strlen-comp strlen-comp-union] vv)) v)
-                            (some ([p entities]) (triple s p v)))
-                       ))
-             
-       (all ([s (join (join yes-triples1 literals) entities)])
-            (and (some (join s answers))
-                 (all ([v (join atoms (join s yes-triples1))]) (in v (join s answers)))))
-       
-       (all ([s (join (join no-triples literals) entities)])
-            (all ([v (join atoms (join s no-triples))]) (not (in v (join s answers)))))
-       )
-
-      (map (lambda (i) (assert (<= i (litlen-max m) )))  (list i2 i3 i4 i5 i6))
-
-      (print-forms m)
-      (println (evaluate i3 m))
-      (println (evaluate i4 m)))
-
-(define null-rel (hash-ref atom-relations 'Null))
-
-(test (ex16 m)
-      (= answer-triples
-         (set ([s entities] [x atoms] [v literals])
-              (and
-               (triple s 'uri5 v)
-               (or
-                (triple x 'uri7 s)
-                (and
-                 (in x null-rel)
-                 (not (in s
-                          (set ([s1 entities])
-                               (some ([s2 entities])
-                                     (triple s2 'uri7 s1)))))))))))
-
-(test (ex17 m)
-      (= answer-triples
-         (set ([s entities] [x atoms] [v literals])
-              (and
-               (triple s 'uri5 v)
-               (or
-                (triple x 'uri7 s)
-                (and
-                 (in x null-rel)
-                 (not (triple _ 'uri7 s))))))))
-
-(define-syntax optional
-  (syntax-rules ()
-    ((_ (v1 ...) x y)
-     (let* ((null-rel (hash-ref atom-relations 'Null)))
-        (and x
-            (or y
-                (and 
-                 (and (in v1 null-rel) ...)
-                 (no [(v1 atoms) ...]
-                     y))))))))
-
-(test (ex18 m) 
-      (= answer-triples
-         (set ([s entities] [x atoms] [v literals])
-              (optional (x) (triple s 'uri5 v) (triple x 'uri7 s)))))
-
-; arguments: orexpr1 ...
-; with orexp1 := (andexpr1 ...)
-;(define-syntax filter
-;  (syntax-rules () 
-;    ((_ (nexpr ...) ...)
-;     (or (and nexpr ...) ...))))
-
-
-;and/or are considered to be binary currently
-(define-synthax (filter-it i depth)
-#:base (numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
-#:else (choose
-        (numeric [choose comp-eq comp-le comp-l comp-ge comp-g comp-uneq] i)
-        (and (filter-it i (- depth 1)) (filter-it i (- depth 1)))
-        (or (filter-it i (- depth 1)) (filter-it i (- depth 1)))))
-     
-; The body of filter-bounded is a hole to be filled with an
-; expression of depth (up to) 1 from the filter grammar.
-(define (boundedfilter i)
-  (filter-it i 1))
-
-(test (ex19 m)
-      (= yes-triples3
-         (set ([s entities] [x atoms] [v literals]) 
-              (and (triple s x v) (apply-predicate (lambda (x) (boundedfilter x)) v))))
-    ;(assert-max sintegers (litlen-max m))
-      (print-forms m)
-      (printeval m sintegers))
-
-(define (andf x y) (and x y))
-
-(define (orf x y) (or x y))
-
-(define (bound x)
-([choose andf orf]
- ([choose < = >] x (?? integer?))
- ([choose < = >] x (?? integer?))))
-
-(test (ex20 m)
-      (= yes-triples3
-         (set ([s entities] [x atoms] [v literals]) 
-              (and (triple s x v)
-                   (apply-predicate
-                    (lambda (x) (and (string? x) (bound (string-length x))))
-                    v))))
-      (print-forms m))
-
-(define uri5-rel (hash-ref atom-relations 'uri5))
-
-(test (ex21 m)
-      (= answer-triples
-         (set ([s entities] [x uri5-rel] [v literals])
-              (and (triple s x v) 
-                   (not (in (-> s x v) yes-triples3))))))
-
-(test (ex22 m)
-      (= (set ([s entities] [x uri5-rel] [v literals])
-              (and (triple s x v) 
-                   (not (in (-> s x v) yes-triples3))))
-         (set ([s entities] [x atoms] [v literals]) 
-              (and (triple s x v)
-                   (apply-predicate
-                    (lambda (x) (and (string? x) (bound (string-length x))))
-                    v))))
-      (print-forms m))
-
-(test (ex23 m)
-      (= (set ([s entities] [v literals])
-              (triple s 'uri5 v))
-         (set ([s entities] [v literals])
-              [choose (triple s 'uri5 v) (triple s 'uri7 v)]))
-      (print-forms m))
-
-(define (is-true-prefix x y) (and (not (equal? x y)) (string-prefix? y x)))
-
-;and/or are considered to be binary currently
-(define-synthax (strfilter-it s1 s2 depth)
-#:base ([choose is-true-prefix equal?] s1 s2)
-#:else (choose
-      ([choose is-true-prefix equal?] s1 s2)
-      (and (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))
-      (or (strfilter-it s1 s2 (- depth 1)) (strfilter-it s1 s2 (- depth 1)))))
-
-
-(define (boundedstrfilter s1 s2)
-(strfilter-it s1 s2 1))
-
-(test (ex24 m)
-      (= yes-triples4
-         (set ([s entities] [x atoms] [v1 literals]) 
-              (some ([v2 literals])
-                    (and (triple s x v2)
-                         (apply-predicate
-                          (lambda (x y)
-                            (and (not (equal? x y)) (string-prefix? y x)))
-                          v2 v1))
-                    )))
-      (print-forms m)
-      (printeval m (list S1 S2)))
-
-(test (ex25 m)
-      (= yes-triples4
-         (set ([s entities] [x atoms] [v1 literals]) 
-              (some ([v2 literals]) (and (triple s x v2) (apply-predicate (lambda (x y) (boundedstrfilter x y)) v2 v1))
-                    )))
-      (print-forms m)
-      (printeval m (list S1 S2)))
-
-
-(define-symbolic* l string?)
-(assert (member l all-atoms))
-
-;(define (choose-atom s p v)
-;  ([choose* s p v l 'uri1 'uri2 'uri3 'uri4 'uri5 'uri6 'uri7 'uri8 'uri9]))
-
-(define-syntax optional2
-(syntax-rules ()
-  ((_ (v1 ...) x)
-   (let* ((null-rel (hash-ref atom-relations 'Null)))
-      (or x
-              (and 
-               (and (in v1 null-rel) ...)
-               (no  [(v1 atoms) ...]
-                   x)))))))
-
-(define-synthax (joins s p v depth)
-#:base (triple [choose s p v] [choose s p v] [choose s p v])
-#:else (choose
-        (triple [choose s p v] [choose s p v] [choose s p v])
-        (and (joins s p v (- depth 1)) (joins s p v (- depth 1)))
-        (and (joins s p v (- depth 1))
-             (apply-predicate (lambda (x) (and (string? x) (bound (string-length x)))) [choose s p v]))))
-
-(test (ex26 m) 
-            (= yes-triples3
-               (set ([s entities] [x atoms] [v1 literals]) 
-                    (joins s x v1 2)))
-    (print-forms m))
-
-(test (ex27 m)
-             (= (set ([s entities] [x uri5-rel] [v literals])
-                     (and (triple s x v) 
-                          (not (in (-> s x v) yes-triples3))))
-                (set ([s entities] [x atoms] [v1 literals]) 
-                     (joins s x v1 2)))
-    (print-forms m))
-
-(define-synthax (joins2 s v depth)
-  #:base (triple s _ v)
-  #:else
-  (choose (triple s _ v)
-          (some ([x atoms])
-                (and
-                 (triple s _ x)
-                 (triple x _ v)))))
-
-(test (ex28 m)
-      (= yes-pairs
-         (set ([s entities] [v literals])
-              (joins2 s v 2)))
-      (print-forms m))
-
-(define-synthax (joins3 s v depth)
-  #:base (triple s _ v)
-  #:else
-  (choose (triple s _ v)
-          (some ([x atoms])
-                (optional (s)
-                 (triple x _ v)
-                 (triple s _ x)))))
-
-(test (ex29 m)
+(test (ex4 model)
       (= yes-pairs2
-         (set ([s atoms] [v literals])
-              (joins3 s v 2)))
-      (print-forms m))
-
-(test (ex30 m)
-      (all ([n (join entities yes-pairs3)])
-           (some ([nn literals])
-                 (apply-predicate is-true-prefix nn n)))
-      (printeval m (list S1 S2)))
-           
-(test (ex31 m)
-      (all ([n (join entities yes-pairs3)])
-           (some ([nn literals])
-                 (apply-predicate (lambda (x y) (and (is-true-prefix x y) (string-suffix? y " A."))) nn n)))
-      (printeval m (list S1 S2)))
-
-(define-synthax (joins4 s v depth)
-  #:base (triple s _ v)
-  #:else
-  (choose (triple s _ v)
-          (some ([x atoms])
-                (and
-                 (joins4 s x (- depth 1))
-                 (joins4 x v (- depth 1))))
-          (some ([x atoms])
-                (optional (s)
-                 (joins4 x v (- depth 1))
-                 (joins4 s x (- depth 1))))))
-
-(test (ex32 m)
-      (= yes-pairs2
-         (set ([s atoms] [v literals])
-              (joins4 s v 2)))
-      (print-forms m))
+         (set ([x entity-or-null] [v literals])
+	      (some ([s entities])
+	            (optional (x)
+                      (triple s 'uri5 v)
+                      (triple x 'uri7 s))))))
+	       
