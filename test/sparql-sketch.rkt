@@ -4,7 +4,7 @@
 
 (current-bitwidth #f)
 
-(define uris '(uri1 uri2 uri3 uri4 uri5 uri6 uri7 uri8 uri9))
+(define uris '(uri1 uri2 uri3 uri4 uri5 uri6 uri7 uri8 uri9 uri0))
 
 (define-symbolic S1 string?)
 (define-symbolic S2 string?)
@@ -31,6 +31,7 @@
    (uri4 uri5 "Allison")
    (uri8 uri5 "Christian")
    (uri9 uri5 "Christa")
+   (uri0 uri0 uri3)
    (uri6 uri7 uri1)
    (uri6 uri7 uri3)
    (uri6 uri7 uri8))))
@@ -180,17 +181,20 @@
 
 ;;
 
+(define (relation a)
+  (if (eq? a _) entities (hash-ref atom-relations a)))
+
 (define (triple s p v)
   (if (or (is-atom? s) (eq? s _))
-      (let ((rel (if (eq? s _) entities (hash-ref atom-relations s))))
+      (let ((rel (relation s)))
         (some ([x rel])
               (triple x p v)))
       (if (or (is-atom? p) (eq? p _))
-          (let ((rel (if (eq? p _) entities (hash-ref atom-relations p))))
+          (let ((rel (relation p)))
             (some ([x rel])
                   (triple s x v)))
           (if (or (is-atom? v) (eq? v _))
-              (let ((rel (if (eq? v _) atoms (hash-ref atom-relations v))))
+              (let ((rel (relation v)))
                 (some ([x rel])
                       (triple s p x)))
               (in (-> s p v) triples)))))
@@ -217,6 +221,21 @@
      (some ([b booleans])
            (or (filter (b) x b)
                (filter (b) y (not b)))))))
+
+(define-syntax exists
+  (syntax-rules ()
+    ((_ (v1 ...) x)
+     (some ([v1 atoms] ...)
+           x))))
+
+(define-syntax minus
+  (syntax-rules ()
+    ((_ (v1 ...) x y)
+     (and x
+          (not
+           (filter (v1 ...)
+            (exists (v1 ...) y)
+            (or (not (eq? 'Null v1)) ...)))))))
 
 ;;
 
@@ -314,3 +333,34 @@
           (uri6 "Paula")
           (Null "Allison")
           (Null "Christa")))))
+
+(test (ex7 model)
+      (= yes-triples1
+         (set ([s entities] [p entities] [v literals])
+              (and
+               (triple s p v)
+               (exists (x)
+                 (triple x 'uri7 s))))))
+
+(test (ex8 model)
+      (= yes-triples3
+         (set ([s entities] [p (relation 'uri5)] [v literals])
+              (and
+               (triple s p v)
+               (not
+                (exists (x)
+                  (triple x 'uri7 s)))))))
+
+(test (ex10 model)
+      (= answers
+         (set ([x entity-or-null] [v literals])
+              (minus (x)
+               (some ([s entities])
+                     (optional (x)
+                       (triple s 'uri5 v)
+                       (triple x 'uri7 s)))
+               (some ([s entities])
+                     (optional (x)
+                       (triple s 'uri5 v)
+                       (triple x 'uri0 s)))))))
+              
